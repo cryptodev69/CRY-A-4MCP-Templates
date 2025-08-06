@@ -356,23 +356,77 @@ const URLManager: React.FC<URLManagerProps> = ({ selectedUrls = [], onUrlsChange
 
   const handleAddConfig = async () => {
     try {
+      // Transform form data to match backend expectations
+      const transformedConfig = {
+        ...newConfig,
+        // Map priority to business_priority for backend compatibility
+        business_priority: newConfig.priority || 1,
+        // Convert key_data_points from string to array
+        key_data_points: newConfig.key_data_points 
+          ? (typeof newConfig.key_data_points === 'string' 
+              ? newConfig.key_data_points.split(',').map(item => item.trim()).filter(item => item.length > 0)
+              : newConfig.key_data_points)
+          : [],
+        // Convert target_data from string to dictionary
+        target_data: newConfig.target_data 
+          ? (typeof newConfig.target_data === 'string' 
+              ? { description: newConfig.target_data }
+              : newConfig.target_data)
+          : {},
+        // Convert cost_analysis from string to dictionary
+        cost_analysis: newConfig.cost_analysis 
+          ? (typeof newConfig.cost_analysis === 'string' 
+              ? { description: newConfig.cost_analysis }
+              : newConfig.cost_analysis)
+          : {}
+      };
+      
+      // Remove the frontend priority field to avoid confusion
+      delete transformedConfig.priority;
+      
+      console.log('Original form data:', newConfig);
+      console.log('Transformed payload:', transformedConfig);
+      console.log('Stringified payload:', JSON.stringify(transformedConfig, null, 2));
+      
       const response = await fetch('/api/url-configurations/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newConfig),
+        body: JSON.stringify(transformedConfig),
       });
       
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
       if (!response.ok) {
-        throw new Error('Failed to create URL configuration');
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
+        
+        let errorMessage = 'Failed to create URL configuration';
+        try {
+          const errorData = JSON.parse(errorText);
+          console.error('Parsed error data:', errorData);
+          if (errorData.detail) {
+            errorMessage = Array.isArray(errorData.detail) 
+               ? errorData.detail.map((err: any) => `${err.loc?.join('.')} - ${err.msg}`).join(', ')
+               : errorData.detail;
+          }
+        } catch (parseError) {
+          console.error('Could not parse error response as JSON:', parseError);
+          errorMessage = `HTTP ${response.status}: ${errorText}`;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const createdConfig = await response.json();
+      console.log('Successfully created config:', createdConfig);
       setPredefinedConfigs([...predefinedConfigs, createdConfig]);
       setShowAddDialog(false);
       setNewConfig({});
     } catch (err) {
+      console.error('Full error object:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
@@ -1024,9 +1078,9 @@ const URLManager: React.FC<URLManagerProps> = ({ selectedUrls = [], onUrlsChange
                 </button>
                 <button
                   onClick={handleAddConfig}
-                  disabled={!newConfig.name || !newConfig.url || !newConfig.profile_type}
+                  disabled={!newConfig.name || !newConfig.url || !newConfig.profile_type || !newConfig.category}
                   className={`px-4 py-2 rounded-md text-white transition-colors ${
-                    newConfig.name && newConfig.url && newConfig.profile_type 
+                    newConfig.name && newConfig.url && newConfig.profile_type && newConfig.category
                       ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' 
                       : 'bg-gray-400 cursor-not-allowed'
                   }`}
