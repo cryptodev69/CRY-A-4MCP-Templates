@@ -72,6 +72,7 @@ class URLMappingsDatabase:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS url_mappings (
                     id TEXT PRIMARY KEY,
+                    name TEXT,
                     url_config_id TEXT NOT NULL,
                     url TEXT NOT NULL,
                     extractor_ids TEXT NOT NULL,
@@ -80,6 +81,9 @@ class URLMappingsDatabase:
                     crawler_settings TEXT,
                     validation_rules TEXT,
                     is_active BOOLEAN DEFAULT 1,
+                    tags TEXT,
+                    notes TEXT,
+                    category TEXT,
                     metadata TEXT,
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
@@ -126,11 +130,15 @@ class URLMappingsDatabase:
         url_config_id: str,
         url: str,
         extractor_ids: List[str],
+        name: Optional[str] = None,
         rate_limit: int = 60,
         priority: int = 1,
         crawler_settings: Optional[Dict[str, Any]] = None,
         validation_rules: Optional[Dict[str, Any]] = None,
         is_active: bool = True,
+        tags: Optional[List[str]] = None,
+        notes: Optional[str] = None,
+        category: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None
     ) -> str:
         """Create a new URL mapping.
@@ -139,11 +147,15 @@ class URLMappingsDatabase:
             url_config_id: Foreign key to URL configuration
             url: The actual URL to be mapped
             extractor_ids: List of extractor IDs to use
+            name: Optional name for the mapping
             rate_limit: Rate limit for requests (default: 60)
             priority: Priority level (1-10, higher = more important, default: 1)
             crawler_settings: Technical crawler parameters
             validation_rules: Data validation rules
             is_active: Whether the mapping is active
+            tags: Optional list of tags
+            notes: Optional notes
+            category: Optional category
             metadata: Additional technical metadata
             
         Returns:
@@ -155,12 +167,13 @@ class URLMappingsDatabase:
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("""
                 INSERT INTO url_mappings (
-                    id, url_config_id, url, extractor_ids, rate_limit, priority,
-                    crawler_settings, validation_rules, is_active,
+                    id, name, url_config_id, url, extractor_ids, rate_limit, priority,
+                    crawler_settings, validation_rules, is_active, tags, notes, category,
                     metadata, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 mapping_id,
+                name,
                 url_config_id,
                 url,
                 self._serialize_json_field(extractor_ids),
@@ -169,6 +182,9 @@ class URLMappingsDatabase:
                 self._serialize_json_field(crawler_settings or {}),
                 self._serialize_json_field(validation_rules or {}),
                 is_active,
+                self._serialize_json_field(tags or []),
+                notes or "",
+                category or "",
                 self._serialize_json_field(metadata or {}),
                 timestamp,
                 timestamp
