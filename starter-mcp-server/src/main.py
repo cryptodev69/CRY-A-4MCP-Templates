@@ -18,7 +18,10 @@ from prometheus_client import start_http_server
 import uvicorn
 
 from .database import init_db, db_manager
-from .cry_a_4mcp.api.endpoints.url_mappings import router as url_mappings_router
+from .cry_a_4mcp.api.endpoints.url_mappings import setup_url_mapping_routes
+
+# Setup URL mapping routes
+url_mappings_router = setup_url_mapping_routes()
 from .exceptions import URLMappingBaseError
 from .cry_a_4mcp.api.endpoints.extractors import router as extractors_router
 from .cry_a_4mcp.api.endpoints.url_configurations import setup_url_configuration_routes

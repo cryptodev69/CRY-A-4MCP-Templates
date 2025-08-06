@@ -215,12 +215,8 @@ class URLConfigurationBase(BaseModel):
         example="Configuration for extracting cryptocurrency news from CoinDesk"
     )
     
-    # List of URL patterns for matching
-    url_patterns: Optional[List[str]] = Field(
-        default=None,
-        description="List of URL patterns for matching",
-        example=["https://www.coindesk.com/news/*", "https://www.coindesk.com/markets/*"]
-    )
+    # Note: url_patterns field removed as it's not part of the database schema
+    # The primary URL field is sufficient for URL configuration management
     
     # Priority level (higher = more important)
     priority: int = Field(
@@ -430,11 +426,7 @@ class URLConfigurationUpdate(BaseModel):
         example="Enhanced configuration with market data extraction"
     )
     
-    url_patterns: Optional[List[str]] = Field(
-        default=None,
-        description="Updated URL patterns",
-        example=["https://www.coindesk.com/markets/*", "https://www.coindesk.com/price/*"]
-    )
+    # Note: url_patterns field removed as it's not part of the database schema
     
     priority: Optional[int] = Field(
         default=None,

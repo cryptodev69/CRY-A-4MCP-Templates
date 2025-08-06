@@ -52,16 +52,15 @@ from fastapi import APIRouter, HTTPException, Query
 
 # Local imports
 from ...storage.url_configuration_db import URLConfigurationDatabase
-from ..models import (
-    URLConfigurationBase,
-    URLConfigurationCreate,
-    URLConfigurationUpdate,
-    URLConfigurationResponse
+from ..models_separated import (
+    URLManagerCreate,
+    URLManagerUpdate,
+    URLManagerResponse
 )# Configure logging for this module
 logger = logging.getLogger(__name__)
 
 
-def _convert_db_to_response(db_config: Dict[str, Any]) -> URLConfigurationResponse:
+def _convert_db_to_response(db_config: Dict[str, Any]) -> URLManagerResponse:
     """Convert database record to URLConfigurationResponse model.
     
     Args:
@@ -122,28 +121,26 @@ def _convert_db_to_response(db_config: Dict[str, Any]) -> URLConfigurationRespon
     elif not isinstance(updated_at, datetime):
         updated_at = datetime.now()
     
-    return URLConfigurationResponse(
+    return URLManagerResponse(
         id=db_config['id'],
         name=db_config.get('name', ''),
         url=db_config.get('url', ''),
         profile_type=db_config.get('profile_type', ''),
         category=db_config.get('category', ''),
         description=db_config.get('description'),
-        business_priority=db_config.get('business_priority', 5),
-        business_value=db_config.get('business_value'),
-        compliance_notes=db_config.get('compliance_notes'),
-        scraping_difficulty=db_config.get('scraping_difficulty', 5),
+        priority=db_config.get('business_priority', 5),  # Map business_priority to priority
+        scraping_difficulty=db_config.get('scraping_difficulty'),
         has_official_api=db_config.get('has_official_api', False),
         api_pricing=db_config.get('api_pricing'),
-        recommendation=db_config.get('recommendation', 'Medium'),
+        recommendation=db_config.get('recommendation'),
         key_data_points=key_data_points,
         target_data=target_data,
-        rationale=db_config.get('rationale', ''),
+        rationale=db_config.get('rationale'),
         cost_analysis=cost_analysis,
         is_active=db_config.get('is_active', True),
         metadata=metadata,
-        created_at=created_at,
-        updated_at=updated_at
+        created_at=created_at.isoformat() if isinstance(created_at, datetime) else str(created_at),
+        updated_at=updated_at.isoformat() if isinstance(updated_at, datetime) else str(updated_at)
     )
 
 
@@ -176,7 +173,7 @@ def setup_url_configuration_routes(url_db: URLConfigurationDatabase):
     # Initialize router with prefix and tags for OpenAPI documentation
     router = APIRouter(prefix="/api/url-configurations", tags=["URL Configurations"])
     
-    @router.get("/", response_model=List[URLConfigurationResponse])
+    @router.get("/", response_model=List[URLManagerResponse])
     async def list_url_configurations(
         profile_type: Optional[str] = Query(None, description="Filter by profile type"),
         category: Optional[str] = Query(None, description="Filter by category"),
@@ -241,7 +238,7 @@ def setup_url_configuration_routes(url_db: URLConfigurationDatabase):
             logger.error(f"Failed to list URL configurations: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to retrieve URL configurations: {str(e)}")
     
-    @router.get("/{config_id}", response_model=URLConfigurationResponse)
+    @router.get("/{config_id}", response_model=URLManagerResponse)
     async def get_url_configuration(config_id: str):
         """Get a specific URL configuration by ID.
         
@@ -272,8 +269,8 @@ def setup_url_configuration_routes(url_db: URLConfigurationDatabase):
             logger.error(f"Failed to get URL configuration {config_id}: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to retrieve URL configuration: {str(e)}")
     
-    @router.post("/", response_model=URLConfigurationResponse, status_code=201)
-    async def create_url_configuration(config: URLConfigurationCreate):
+    @router.post("/", response_model=URLManagerResponse, status_code=201)
+    async def create_url_configuration(config: URLManagerCreate):
         """Create a new URL configuration.
         
         Args:
@@ -291,6 +288,15 @@ def setup_url_configuration_routes(url_db: URLConfigurationDatabase):
             # Convert Pydantic model to dict for database
             config_data = config.model_dump()
             
+            # Map 'priority' field to 'business_priority' for database compatibility
+            if 'priority' in config_data:
+                config_data['business_priority'] = config_data.pop('priority')
+            
+            # Remove fields that are not supported by the database create_configuration method
+            unsupported_fields = ['extractor_ids', 'crawler_settings', 'rate_limit', 'validation_rules']
+            for field in unsupported_fields:
+                config_data.pop(field, None)
+            
             # Create configuration in database
             config_id = await url_db.create_configuration(**config_data)
             
@@ -307,8 +313,8 @@ def setup_url_configuration_routes(url_db: URLConfigurationDatabase):
             logger.error(f"Failed to create URL configuration: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to create URL configuration: {str(e)}")
     
-    @router.put("/{config_id}", response_model=URLConfigurationResponse)
-    async def update_url_configuration(config_id: str, config: URLConfigurationUpdate):
+    @router.put("/{config_id}", response_model=URLManagerResponse)
+    async def update_url_configuration(config_id: str, config: URLManagerUpdate):
         """Update an existing URL configuration.
         
         Args:
@@ -385,7 +391,7 @@ def setup_url_configuration_routes(url_db: URLConfigurationDatabase):
             logger.error(f"Failed to delete URL configuration {config_id}: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to delete URL configuration: {str(e)}")
     
-    @router.get("/search/", response_model=List[URLConfigurationResponse])
+    @router.get("/search/", response_model=List[URLManagerResponse])
     async def search_url_configurations(
         query: str = Query(..., description="Search query for URL patterns or names"),
         limit: int = Query(50, ge=1, le=500, description="Maximum number of results")
@@ -439,11 +445,10 @@ def setup_url_configuration_routes(url_db: URLConfigurationDatabase):
                 {
                     "name": "CoinDesk News",
                     "url": "https://www.coindesk.com/news",
-                    "url_patterns": ["https://www.coindesk.com/news/*"],
                     "profile_type": "news",
                     "category": "cryptocurrency",
                     "description": "Leading cryptocurrency news and analysis",
-                    "priority": 9,
+                    "business_priority": 9,
                     "scraping_difficulty": 6,
                     "has_official_api": False,
                     "recommendation": "High",
@@ -451,17 +456,15 @@ def setup_url_configuration_routes(url_db: URLConfigurationDatabase):
                     "target_data": {"articles": "news_content", "sentiment": "market_sentiment"},
                     "rationale": "Premier source for cryptocurrency news and market analysis",
                     "cost_analysis": {"requests_per_day": 100, "bandwidth_mb": 50},
-                    "extractor_ids": ["crypto_news_extractor"],
                     "is_active": True
                 },
                 {
                     "name": "CoinGecko API",
                     "url": "https://api.coingecko.com/api/v3",
-                    "url_patterns": ["https://api.coingecko.com/api/v3/*"],
                     "profile_type": "market_data",
                     "category": "cryptocurrency",
                     "description": "Comprehensive cryptocurrency market data API",
-                    "priority": 10,
+                    "business_priority": 10,
                     "scraping_difficulty": 2,
                     "has_official_api": True,
                     "api_pricing": "Free tier available, paid plans from $129/month",
@@ -470,18 +473,15 @@ def setup_url_configuration_routes(url_db: URLConfigurationDatabase):
                     "target_data": {"prices": "real_time_data", "market_data": "historical_data"},
                     "rationale": "Most comprehensive and reliable crypto market data source",
                     "cost_analysis": {"api_calls_per_day": 1000, "cost_per_month": 0},
-                    "extractor_ids": ["coingecko_api_extractor"],
-                    "rate_limit": 50,
                     "is_active": True
                 },
                 {
                     "name": "CryptoCompare",
                     "url": "https://www.cryptocompare.com",
-                    "url_patterns": ["https://www.cryptocompare.com/*"],
                     "profile_type": "market_data",
                     "category": "cryptocurrency",
                     "description": "Cryptocurrency market data and news platform",
-                    "priority": 8,
+                    "business_priority": 8,
                     "scraping_difficulty": 7,
                     "has_official_api": True,
                     "api_pricing": "Free tier with limits, paid plans available",
@@ -490,7 +490,6 @@ def setup_url_configuration_routes(url_db: URLConfigurationDatabase):
                     "target_data": {"market_data": "price_volume", "news": "market_news"},
                     "rationale": "Reliable source for both market data and cryptocurrency news",
                     "cost_analysis": {"requests_per_day": 200, "api_cost_monthly": 50},
-                    "extractor_ids": ["cryptocompare_extractor"],
                     "is_active": True
                 }
             ]
