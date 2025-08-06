@@ -1,0 +1,371 @@
+{
+  "comparison_id": "strategy-comparison-20230615-123456",
+  "timestamp": "2023-06-15T12:34:56Z",
+  "config": {
+    "runs_per_combination": 3,
+    "timeout_seconds": 120
+  },
+  "results": [
+    {
+      "strategy": "CryptoLLMExtractionStrategy",
+      "provider": "openai",
+      "model": "gpt-4",
+      "scenario": "crypto_news",
+      "metrics": {
+        "extraction_time": {
+          "mean": 3.45,
+          "min": 3.12,
+          "max": 3.89,
+          "std_dev": 0.32,
+          "unit": "seconds"
+        },
+        "token_usage": {
+          "mean": 1250,
+          "min": 1150,
+          "max": 1350,
+          "std_dev": 82,
+          "unit": "tokens"
+        },
+        "extraction_quality": {
+          "mean": 92.5,
+          "min": 90.0,
+          "max": 95.0,
+          "std_dev": 2.1,
+          "unit": "score"
+        },
+        "field_completeness": {
+          "mean": 100.0,
+          "min": 100.0,
+          "max": 100.0,
+          "std_dev": 0.0,
+          "unit": "percentage"
+        },
+        "schema_validation_success": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "std_dev": 0.0,
+          "unit": "boolean"
+        }
+      }
+    },
+    {
+      "strategy": "LLMExtractionStrategy",
+      "provider": "openai",
+      "model": "gpt-4",
+      "scenario": "crypto_news",
+      "metrics": {
+        "extraction_time": {
+          "mean": 3.15,
+          "min": 2.95,
+          "max": 3.35,
+          "std_dev": 0.16,
+          "unit": "seconds"
+        },
+        "token_usage": {
+          "mean": 1150,
+          "min": 1100,
+          "max": 1200,
+          "std_dev": 41,
+          "unit": "tokens"
+        },
+        "extraction_quality": {
+          "mean": 85.0,
+          "min": 82.0,
+          "max": 88.0,
+          "std_dev": 2.45,
+          "unit": "score"
+        },
+        "field_completeness": {
+          "mean": 83.3,
+          "min": 80.0,
+          "max": 86.6,
+          "std_dev": 2.72,
+          "unit": "percentage"
+        },
+        "schema_validation_success": {
+          "mean": 0.67,
+          "min": 0.0,
+          "max": 1.0,
+          "std_dev": 0.47,
+          "unit": "boolean"
+        }
+      }
+    },
+    {
+      "strategy": "EnhancedCryptoExtractionStrategy",
+      "provider": "openai",
+      "model": "gpt-4",
+      "scenario": "crypto_news",
+      "metrics": {
+        "extraction_time": {
+          "mean": 3.85,
+          "min": 3.65,
+          "max": 4.05,
+          "std_dev": 0.16,
+          "unit": "seconds"
+        },
+        "token_usage": {
+          "mean": 1350,
+          "min": 1300,
+          "max": 1400,
+          "std_dev": 41,
+          "unit": "tokens"
+        },
+        "extraction_quality": {
+          "mean": 96.0,
+          "min": 95.0,
+          "max": 97.0,
+          "std_dev": 0.82,
+          "unit": "score"
+        },
+        "field_completeness": {
+          "mean": 100.0,
+          "min": 100.0,
+          "max": 100.0,
+          "std_dev": 0.0,
+          "unit": "percentage"
+        },
+        "schema_validation_success": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "std_dev": 0.0,
+          "unit": "boolean"
+        }
+      }
+    },
+    {
+      "strategy": "CryptoLLMExtractionStrategy",
+      "provider": "anthropic",
+      "model": "claude-2",
+      "scenario": "crypto_news",
+      "metrics": {
+        "extraction_time": {
+          "mean": 4.12,
+          "min": 3.95,
+          "max": 4.35,
+          "std_dev": 0.17,
+          "unit": "seconds"
+        },
+        "token_usage": {
+          "mean": 1350,
+          "min": 1300,
+          "max": 1400,
+          "std_dev": 41,
+          "unit": "tokens"
+        },
+        "extraction_quality": {
+          "mean": 94.0,
+          "min": 93.0,
+          "max": 95.0,
+          "std_dev": 0.82,
+          "unit": "score"
+        },
+        "field_completeness": {
+          "mean": 100.0,
+          "min": 100.0,
+          "max": 100.0,
+          "std_dev": 0.0,
+          "unit": "percentage"
+        },
+        "schema_validation_success": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "std_dev": 0.0,
+          "unit": "boolean"
+        }
+      }
+    },
+    {
+      "strategy": "CryptoLLMExtractionStrategy",
+      "provider": "openai",
+      "model": "gpt-4",
+      "scenario": "html_content",
+      "metrics": {
+        "extraction_time": {
+          "mean": 5.25,
+          "min": 4.95,
+          "max": 5.55,
+          "std_dev": 0.25,
+          "unit": "seconds"
+        },
+        "token_usage": {
+          "mean": 2250,
+          "min": 2150,
+          "max": 2350,
+          "std_dev": 82,
+          "unit": "tokens"
+        },
+        "extraction_quality": {
+          "mean": 78.5,
+          "min": 75.0,
+          "max": 82.0,
+          "std_dev": 2.9,
+          "unit": "score"
+        },
+        "field_completeness": {
+          "mean": 85.7,
+          "min": 85.7,
+          "max": 85.7,
+          "std_dev": 0.0,
+          "unit": "percentage"
+        },
+        "schema_validation_success": {
+          "mean": 0.67,
+          "min": 0.0,
+          "max": 1.0,
+          "std_dev": 0.47,
+          "unit": "boolean"
+        }
+      }
+    },
+    {
+      "strategy": "EnhancedCryptoExtractionStrategy",
+      "provider": "openai",
+      "model": "gpt-4",
+      "scenario": "html_content",
+      "metrics": {
+        "extraction_time": {
+          "mean": 6.15,
+          "min": 5.85,
+          "max": 6.45,
+          "std_dev": 0.25,
+          "unit": "seconds"
+        },
+        "token_usage": {
+          "mean": 2450,
+          "min": 2350,
+          "max": 2550,
+          "std_dev": 82,
+          "unit": "tokens"
+        },
+        "extraction_quality": {
+          "mean": 94.5,
+          "min": 93.0,
+          "max": 96.0,
+          "std_dev": 1.2,
+          "unit": "score"
+        },
+        "field_completeness": {
+          "mean": 100.0,
+          "min": 100.0,
+          "max": 100.0,
+          "std_dev": 0.0,
+          "unit": "percentage"
+        },
+        "schema_validation_success": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "std_dev": 0.0,
+          "unit": "boolean"
+        }
+      }
+    }
+  ],
+  "comparisons": {
+    "by_strategy": {
+      "extraction_quality": {
+        "CryptoLLMExtractionStrategy": {
+          "mean": 88.33,
+          "std_dev": 7.12,
+          "rank": 2
+        },
+        "LLMExtractionStrategy": {
+          "mean": 85.0,
+          "std_dev": 2.45,
+          "rank": 3
+        },
+        "EnhancedCryptoExtractionStrategy": {
+          "mean": 95.25,
+          "std_dev": 1.06,
+          "rank": 1
+        }
+      },
+      "extraction_time": {
+        "CryptoLLMExtractionStrategy": {
+          "mean": 4.27,
+          "std_dev": 0.74,
+          "rank": 2
+        },
+        "LLMExtractionStrategy": {
+          "mean": 3.15,
+          "std_dev": 0.16,
+          "rank": 1
+        },
+        "EnhancedCryptoExtractionStrategy": {
+          "mean": 5.0,
+          "std_dev": 1.15,
+          "rank": 3
+        }
+      },
+      "field_completeness": {
+        "CryptoLLMExtractionStrategy": {
+          "mean": 95.23,
+          "std_dev": 6.65,
+          "rank": 2
+        },
+        "LLMExtractionStrategy": {
+          "mean": 83.3,
+          "std_dev": 2.72,
+          "rank": 3
+        },
+        "EnhancedCryptoExtractionStrategy": {
+          "mean": 100.0,
+          "std_dev": 0.0,
+          "rank": 1
+        }
+      },
+      "schema_validation_success": {
+        "CryptoLLMExtractionStrategy": {
+          "mean": 0.89,
+          "std_dev": 0.17,
+          "rank": 2
+        },
+        "LLMExtractionStrategy": {
+          "mean": 0.67,
+          "std_dev": 0.47,
+          "rank": 3
+        },
+        "EnhancedCryptoExtractionStrategy": {
+          "mean": 1.0,
+          "std_dev": 0.0,
+          "rank": 1
+        }
+      }
+    },
+    "by_scenario": {
+      "extraction_quality": {
+        "crypto_news": {
+          "mean": 91.83,
+          "std_dev": 4.64
+        },
+        "html_content": {
+          "mean": 86.5,
+          "std_dev": 8.0
+        }
+      },
+      "field_completeness": {
+        "crypto_news": {
+          "mean": 95.83,
+          "std_dev": 6.97
+        },
+        "html_content": {
+          "mean": 92.85,
+          "std_dev": 7.14
+        }
+      }
+    }
+  },
+  "summary": {
+    "best_overall_strategy": "EnhancedCryptoExtractionStrategy",
+    "fastest_strategy": "LLMExtractionStrategy",
+    "highest_quality_strategy": "EnhancedCryptoExtractionStrategy",
+    "most_complete_strategy": "EnhancedCryptoExtractionStrategy",
+    "most_schema_compliant_strategy": "EnhancedCryptoExtractionStrategy",
+    "easiest_scenario": "crypto_news",
+    "most_challenging_scenario": "html_content"
+  }
+}

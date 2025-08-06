@@ -1,0 +1,363 @@
+/* Custom CSS for Strategy Manager UI */
+
+/* Main color palette */
+:root {
+    --primary-color: #3a7ca5;         /* Deep blue */
+    --primary-light: #81c3d7;         /* Light blue */
+    --secondary-color: #16a085;       /* Teal */
+    --accent-color: #f39c12;          /* Orange */
+    --danger-color: #e74c3c;          /* Red */
+    --success-color: #2ecc71;         /* Green */
+    --warning-color: #f1c40f;         /* Yellow */
+    --dark-bg: #2c3e50;               /* Dark blue-gray */
+    --light-bg: #ecf0f1;              /* Light gray */
+    --text-color: #333333;            /* Dark gray for text */
+    --text-light: #ffffff;            /* White text */
+    --card-bg: rgba(255, 255, 255, 0.05); /* Semi-transparent white */
+    --card-border: rgba(255, 255, 255, 0.1); /* Border color */
+    --hover-bg: rgba(255, 255, 255, 0.1);    /* Hover background */
+    --active-bg: rgba(255, 255, 255, 0.2);   /* Active background */
+}
+
+/* Global styles */
+.stApp {
+    background-color: var(--dark-bg);
+    color: var(--text-light);
+}
+
+/* Header styles */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+/* App header styles */
+.app-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: rgba(44, 62, 80, 0.7);
+    border-radius: 0.75rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+.app-logo {
+    margin-right: 1rem;
+    width: 40px;
+    height: 40px;
+}
+
+.app-title-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.app-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 0;
+}
+
+.app-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    opacity: 0.8;
+    margin-top: 0.25rem;
+}
+
+/* Navigation styles */
+.main-nav .nav-item {
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    display: flex;
+    align-items: center;
+}
+
+.main-nav .nav-item:hover {
+    background-color: var(--hover-bg);
+    border-left: 3px solid var(--primary-light);
+    transform: translateX(5px);
+}
+
+.main-nav .nav-item.active {
+    background-color: var(--active-bg);
+    border-left: 3px solid var(--primary-color);
+    font-weight: bold;
+}
+
+.main-nav .nav-icon {
+    margin-right: 10px;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+}
+
+/* Button styles */
+.stButton>button {
+    width: 100%;
+    margin-bottom: 10px;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    border: 1px solid var(--card-border);
+    background-color: var(--primary-color);
+    color: var(--text-light);
+}
+
+.stButton>button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background-color: var(--primary-color);
+    border-color: var(--primary-light);
+}
+
+/* Sidebar button styles */
+.sidebar .stButton>button {
+    background-color: rgba(58, 124, 165, 0.2);
+    border: 1px solid rgba(129, 195, 215, 0.2);
+    transition: all 0.3s ease;
+}
+
+.sidebar .stButton>button:hover {
+    background-color: rgba(58, 124, 165, 0.4);
+    border-color: rgba(129, 195, 215, 0.5);
+    transform: translateY(-2px);
+}
+
+/* Strategy card styles */
+.strategy-card {
+    border: 1px solid var(--card-border);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    transition: all 0.3s ease;
+    background-color: var(--card-bg);
+    position: relative;
+    overflow: hidden;
+}
+
+.strategy-card:hover {
+    border-color: var(--primary-light);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);
+}
+
+.strategy-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: all 0.3s ease;
+}
+
+.strategy-card:hover::before {
+    background-color: var(--accent-color);
+}
+
+.strategy-card h3 {
+    margin-top: 0;
+    color: var(--primary-light);
+}
+
+/* Category badge styles */
+.category-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    background-color: var(--primary-color);
+    color: var(--text-light);
+}
+
+/* Action button styles */
+.action-button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+.action-button.edit {
+    background-color: var(--primary-color);
+    color: var(--text-light);
+}
+
+.action-button.test {
+    background-color: var(--secondary-color);
+    color: var(--text-light);
+}
+
+.action-button.delete {
+    background-color: var(--danger-color);
+    color: var(--text-light);
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Form styles */
+.form-container {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* JSON editor styles */
+.json-editor {
+    font-family: 'Courier New', monospace;
+    height: 300px;
+    background-color: rgba(0, 0, 0, 0.2);
+    color: var(--text-light);
+    border: 1px solid var(--card-border);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+}
+
+/* Tabs styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    background-color: var(--card-bg);
+    border-radius: 4px 4px 0 0;
+    padding: 10px 16px;
+    border: 1px solid var(--card-border);
+    border-bottom: none;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: var(--primary-color);
+    border-color: var(--primary-light);
+}
+
+/* Status indicators */
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-indicator.success {
+    background-color: var(--success-color);
+}
+
+.status-indicator.warning {
+    background-color: var(--warning-color);
+}
+
+.status-indicator.error {
+    background-color: var(--danger-color);
+}
+
+/* Metrics styling */
+.metric-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    border-color: var(--primary-light);
+    transform: translateY(-2px);
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-light);
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    opacity: 0.8;
+}
+
+/* Search box styling */
+.search-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.search-container input {
+    padding-left: 2.5rem;
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 0.5rem;
+    color: var(--text-light);
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    opacity: 0.6;
+}
+
+/* Tooltip styling */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: var(--dark-bg);
+    color: var(--text-light);
+    text-align: center;
+    border-radius: 6px;
+    padding: 10px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--card-border);
+}
+
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Animation for page transitions */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}

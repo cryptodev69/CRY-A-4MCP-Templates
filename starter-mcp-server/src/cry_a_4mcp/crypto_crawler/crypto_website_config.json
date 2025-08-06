@@ -1,0 +1,96 @@
+{
+  "crypto_websites": [
+    {
+      "name": "Altcoin Season Index",
+      "url": "https://www.blockchaincenter.net/en/altcoin-season-index/",
+      "content_type": "market_data",
+      "priority": "high",
+      "crawl_frequency": "hourly",
+      "extraction_focus": ["market_indicators", "altcoin_performance"],
+      "persona_relevance": {
+        "meme_snipers": 0.7,
+        "gem_hunters": 0.9,
+        "legacy_investors": 0.5
+      }
+    },
+    {
+      "name": "CoinGecko",
+      "url": "https://www.coingecko.com/",
+      "content_type": "market_data",
+      "priority": "high",
+      "crawl_frequency": "hourly",
+      "extraction_focus": ["token_prices", "market_cap", "trading_volume"],
+      "persona_relevance": {
+        "meme_snipers": 0.8,
+        "gem_hunters": 0.9,
+        "legacy_investors": 0.7
+      }
+    },
+    {
+      "name": "CoinDesk",
+      "url": "https://www.coindesk.com/",
+      "rss_feed": "https://www.coindesk.com/arc/outboundfeeds/rss/",
+      "content_type": "news",
+      "priority": "high",
+      "crawl_frequency": "hourly",
+      "extraction_focus": ["breaking_news", "market_analysis"],
+      "persona_relevance": {
+        "meme_snipers": 0.6,
+        "gem_hunters": 0.8,
+        "legacy_investors": 0.9
+      }
+    },
+    {
+      "name": "CryptoPanic",
+      "url": "https://cryptopanic.com/",
+      "content_type": "news_aggregator",
+      "priority": "medium",
+      "crawl_frequency": "hourly",
+      "extraction_focus": ["trending_news", "sentiment_analysis"],
+      "persona_relevance": {
+        "meme_snipers": 0.9,
+        "gem_hunters": 0.7,
+        "legacy_investors": 0.5
+      }
+    },
+    {
+      "name": "DeFi Pulse",
+      "url": "https://defipulse.com/",
+      "content_type": "defi_metrics",
+      "priority": "medium",
+      "crawl_frequency": "daily",
+      "extraction_focus": ["tvl", "protocol_rankings"],
+      "persona_relevance": {
+        "meme_snipers": 0.3,
+        "gem_hunters": 0.8,
+        "legacy_investors": 0.6
+      }
+    },
+    {
+      "name": "Crypto Fear & Greed Index",
+      "url": "https://alternative.me/crypto/fear-and-greed-index/",
+      "content_type": "sentiment_indicator",
+      "priority": "high",
+      "crawl_frequency": "daily",
+      "extraction_focus": ["market_sentiment", "historical_comparison"],
+      "persona_relevance": {
+        "meme_snipers": 0.8,
+        "gem_hunters": 0.7,
+        "legacy_investors": 0.9
+      }
+    }
+  ],
+  "crawl4ai_configuration": {
+    "user_agent": "CryptoCrawler/1.0",
+    "headless": true,
+    "bypass_cache": false,
+    "word_count_threshold": 100,
+    "capture_screenshot": true,
+    "extract_images": true,
+    "concurrent_crawlers": 5,
+    "rate_limiting": {
+      "requests_per_minute": 10,
+      "delay_between_requests": 6
+    }
+  }
+}

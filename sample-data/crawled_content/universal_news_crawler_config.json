@@ -1,0 +1,354 @@
+{
+  "universal_news_crawler": {
+    "description": "Comprehensive news ingestion for all crypto personas",
+    "crawl_frequency": "5_minutes",
+    "ai_routing": "persona_classification_enabled",
+    
+    "tier_1_crypto_news": {
+      "description": "Primary crypto news sources - highest priority",
+      "sources": [
+        {
+          "name": "CoinDesk",
+          "url": "https://www.coindesk.com",
+          "rss_feed": "https://www.coindesk.com/arc/outboundfeeds/rss/",
+          "api_endpoint": "https://www.coindesk.com/api/v1/articles",
+          "priority": "high",
+          "crawl_frequency": "2_minutes",
+          "extraction_focus": ["breaking_news", "institutional", "regulatory", "market_analysis"],
+          "persona_relevance": {
+            "meme_snipers": 0.3,
+            "gem_hunters": 0.8,
+            "legacy_investors": 0.9
+          }
+        },
+        {
+          "name": "Cointelegraph", 
+          "url": "https://cointelegraph.com",
+          "rss_feed": "https://cointelegraph.com/rss",
+          "priority": "high",
+          "crawl_frequency": "2_minutes",
+          "extraction_focus": ["altcoin_news", "defi", "nft", "market_trends"],
+          "persona_relevance": {
+            "meme_snipers": 0.7,
+            "gem_hunters": 0.9,
+            "legacy_investors": 0.6
+          }
+        },
+        {
+          "name": "The Block",
+          "url": "https://www.theblock.co",
+          "rss_feed": "https://www.theblock.co/rss.xml",
+          "priority": "high", 
+          "crawl_frequency": "3_minutes",
+          "extraction_focus": ["institutional", "funding", "partnerships", "data_analysis"],
+          "persona_relevance": {
+            "meme_snipers": 0.4,
+            "gem_hunters": 0.8,
+            "legacy_investors": 0.9
+          }
+        },
+        {
+          "name": "Decrypt",
+          "url": "https://decrypt.co",
+          "rss_feed": "https://decrypt.co/feed",
+          "priority": "high",
+          "crawl_frequency": "3_minutes",
+          "extraction_focus": ["web3", "gaming", "nft", "beginner_friendly"],
+          "persona_relevance": {
+            "meme_snipers": 0.6,
+            "gem_hunters": 0.7,
+            "legacy_investors": 0.4
+          }
+        }
+      ]
+    },
+
+    "tier_2_crypto_news": {
+      "description": "Secondary crypto news sources",
+      "sources": [
+        {
+          "name": "CryptoSlate",
+          "url": "https://cryptoslate.com",
+          "rss_feed": "https://cryptoslate.com/feed/",
+          "crawl_frequency": "5_minutes"
+        },
+        {
+          "name": "Bitcoin Magazine",
+          "url": "https://bitcoinmagazine.com",
+          "rss_feed": "https://bitcoinmagazine.com/feed",
+          "crawl_frequency": "5_minutes"
+        },
+        {
+          "name": "Blockworks",
+          "url": "https://blockworks.co",
+          "rss_feed": "https://blockworks.co/feed",
+          "crawl_frequency": "5_minutes"
+        },
+        {
+          "name": "U.Today",
+          "url": "https://u.today",
+          "rss_feed": "https://u.today/rss",
+          "crawl_frequency": "5_minutes"
+        },
+        {
+          "name": "CoinGape",
+          "url": "https://coingape.com",
+          "rss_feed": "https://coingape.com/feed/",
+          "crawl_frequency": "5_minutes"
+        },
+        {
+          "name": "Crypto Briefing",
+          "url": "https://cryptobriefing.com",
+          "rss_feed": "https://cryptobriefing.com/feed/",
+          "crawl_frequency": "5_minutes"
+        },
+        {
+          "name": "CryptoPotato",
+          "url": "https://cryptopotato.com",
+          "rss_feed": "https://cryptopotato.com/feed/",
+          "crawl_frequency": "5_minutes"
+        }
+      ]
+    },
+
+    "crypto_aggregators": {
+      "description": "News aggregation platforms with APIs",
+      "sources": [
+        {
+          "name": "CryptoCompare News",
+          "api_endpoint": "https://min-api.cryptocompare.com/data/v2/news/",
+          "api_key_required": true,
+          "crawl_frequency": "3_minutes",
+          "extraction_focus": ["aggregated_sentiment", "source_diversity", "trending_topics"],
+          "persona_relevance": {
+            "meme_snipers": 0.8,
+            "gem_hunters": 0.7,
+            "legacy_investors": 0.6
+          }
+        },
+        {
+          "name": "CoinMarketCap News",
+          "url": "https://coinmarketcap.com/headlines/news/",
+          "api_endpoint": "https://pro-api.coinmarketcap.com/v1/content/latest",
+          "api_key_required": true,
+          "crawl_frequency": "3_minutes"
+        },
+        {
+          "name": "CoinGecko News",
+          "api_endpoint": "https://api.coingecko.com/api/v3/news",
+          "crawl_frequency": "5_minutes",
+          "rate_limit": "50_calls_per_minute"
+        }
+      ]
+    },
+
+    "mainstream_financial_news": {
+      "description": "Traditional finance news with crypto coverage",
+      "sources": [
+        {
+          "name": "Bloomberg Crypto",
+          "url": "https://www.bloomberg.com/crypto",
+          "crawl_frequency": "10_minutes",
+          "extraction_focus": ["institutional_adoption", "regulatory", "macro_impact"],
+          "persona_relevance": {
+            "meme_snipers": 0.2,
+            "gem_hunters": 0.5,
+            "legacy_investors": 0.9
+          }
+        },
+        {
+          "name": "Reuters Crypto",
+          "url": "https://www.reuters.com/technology/",
+          "rss_feed": "https://feeds.reuters.com/reuters/technologyNews",
+          "crawl_frequency": "10_minutes"
+        },
+        {
+          "name": "Wall Street Journal Crypto",
+          "url": "https://www.wsj.com/news/types/cryptocurrency",
+          "crawl_frequency": "15_minutes"
+        },
+        {
+          "name": "Financial Times Crypto",
+          "url": "https://www.ft.com/cryptocurrencies",
+          "crawl_frequency": "15_minutes"
+        },
+        {
+          "name": "CNBC Crypto",
+          "url": "https://www.cnbc.com/cryptocurrency/",
+          "rss_feed": "https://www.cnbc.com/id/31229794/device/rss/rss.html",
+          "crawl_frequency": "10_minutes"
+        }
+      ]
+    },
+
+    "federal_reserve_macro": {
+      "description": "Federal Reserve and macro economic data",
+      "sources": [
+        {
+          "name": "Federal Reserve Press Releases",
+          "url": "https://www.federalreserve.gov/newsevents/pressreleases.htm",
+          "rss_feed": "https://www.federalreserve.gov/feeds/press_all.xml",
+          "crawl_frequency": "30_minutes",
+          "extraction_focus": ["interest_rates", "monetary_policy", "fomc_decisions"],
+          "persona_relevance": {
+            "meme_snipers": 0.3,
+            "gem_hunters": 0.6,
+            "legacy_investors": 1.0
+          }
+        },
+        {
+          "name": "FRED Economic Data",
+          "api_endpoint": "https://api.stlouisfed.org/fred/series/observations",
+          "api_key_required": true,
+          "crawl_frequency": "daily",
+          "key_indicators": [
+            "FEDFUNDS", "UNRATE", "CPIAUCSL", "GDP", "DGS10", "DEXUSEU"
+          ]
+        },
+        {
+          "name": "FOMC Calendar",
+          "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+          "crawl_frequency": "daily",
+          "extraction_focus": ["meeting_dates", "policy_announcements"]
+        },
+        {
+          "name": "Treasury Fiscal Data",
+          "api_endpoint": "https://api.fiscaldata.treasury.gov/services/api/v1/",
+          "crawl_frequency": "daily"
+        }
+      ]
+    },
+
+    "market_indicators": {
+      "description": "Crypto market cycle and sentiment indicators",
+      "sources": [
+        {
+          "name": "Fear & Greed Index",
+          "api_endpoint": "https://api.alternative.me/fng/",
+          "crawl_frequency": "1_hour",
+          "extraction_focus": ["sentiment_score", "historical_data"],
+          "persona_relevance": {
+            "meme_snipers": 0.9,
+            "gem_hunters": 0.7,
+            "legacy_investors": 0.6
+          }
+        },
+        {
+          "name": "Bitcoin Dominance",
+          "api_endpoint": "https://api.coinmarketcap.com/data-api/v3/global-metrics/quotes/latest",
+          "crawl_frequency": "5_minutes",
+          "extraction_focus": ["btc_dominance", "total_market_cap", "altcoin_market_cap"]
+        },
+        {
+          "name": "Altcoin Season Index",
+          "api_endpoint": "https://www.blockchaincenter.net/altcoin-season-index/",
+          "crawl_frequency": "1_hour",
+          "extraction_focus": ["altseason_score", "top_performers"]
+        },
+        {
+          "name": "Crypto Fear & Greed (CFGI)",
+          "api_endpoint": "https://cfgi.io/api/fear-and-greed-index",
+          "crawl_frequency": "1_hour"
+        }
+      ]
+    },
+
+    "specialized_sources": {
+      "description": "Niche sources for specific insights",
+      "sources": [
+        {
+          "name": "DeFiPulse",
+          "url": "https://defipulse.com",
+          "api_endpoint": "https://data-api.defipulse.com/api/v1/defipulse/api/GetProjects",
+          "crawl_frequency": "15_minutes",
+          "extraction_focus": ["tvl_changes", "new_protocols", "defi_trends"]
+        },
+        {
+          "name": "DeFiLlama News",
+          "url": "https://defillama.com",
+          "crawl_frequency": "10_minutes"
+        },
+        {
+          "name": "Messari Research",
+          "url": "https://messari.io/research",
+          "crawl_frequency": "1_hour",
+          "extraction_focus": ["fundamental_analysis", "token_reports"]
+        },
+        {
+          "name": "Delphi Digital",
+          "url": "https://delphidigital.io/reports",
+          "crawl_frequency": "daily"
+        },
+        {
+          "name": "Bankless",
+          "url": "https://banklesshq.com",
+          "rss_feed": "https://banklesshq.com/rss/",
+          "crawl_frequency": "1_hour"
+        }
+      ]
+    },
+
+    "ai_processing_pipeline": {
+      "content_classification": {
+        "breaking_news": "urgency_keywords + publication_time",
+        "market_analysis": "technical_indicators + price_mentions",
+        "regulatory": "government_entities + policy_keywords",
+        "institutional": "company_names + investment_amounts",
+        "technical": "protocol_names + development_terms"
+      },
+      
+      "persona_routing": {
+        "meme_snipers": {
+          "keywords": ["viral", "moonshot", "100x", "gem", "launch", "trending"],
+          "sources_priority": ["social_sentiment", "new_listings", "volume_spikes"],
+          "urgency": "high"
+        },
+        "gem_hunters": {
+          "keywords": ["fundamental", "development", "partnership", "adoption", "utility"],
+          "sources_priority": ["research_reports", "technical_analysis", "project_updates"],
+          "urgency": "medium"
+        },
+        "legacy_investors": {
+          "keywords": ["institutional", "regulation", "macro", "etf", "adoption"],
+          "sources_priority": ["regulatory_news", "institutional_moves", "macro_data"],
+          "urgency": "low"
+        }
+      },
+
+      "quality_scoring": {
+        "source_credibility": "tier_1: 1.0, tier_2: 0.8, aggregators: 0.6",
+        "content_depth": "word_count + technical_terms + data_citations",
+        "timeliness": "publication_age_penalty",
+        "uniqueness": "duplicate_detection_score"
+      }
+    },
+
+    "crawl4ai_configuration": {
+      "concurrent_crawlers": 20,
+      "rate_limiting": {
+        "tier_1_sources": "30_requests_per_minute",
+        "tier_2_sources": "20_requests_per_minute", 
+        "api_sources": "varies_by_provider"
+      },
+      "content_extraction": {
+        "article_text": "main_content_selector",
+        "publish_date": "time_element_extraction",
+        "author": "byline_extraction",
+        "tags": "category_classification",
+        "sentiment": "ai_sentiment_analysis"
+      },
+      "storage_format": {
+        "raw_content": "full_html",
+        "processed_content": "clean_text + metadata",
+        "ai_analysis": "sentiment + classification + routing"
+      }
+    },
+
+    "monitoring_alerts": {
+      "breaking_news": "immediate_notification",
+      "fed_announcements": "high_priority_alert",
+      "major_partnerships": "medium_priority_alert",
+      "market_indicators_extreme": "immediate_notification"
+    }
+  }
+}

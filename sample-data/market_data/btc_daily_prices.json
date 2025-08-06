@@ -1,0 +1,188 @@
+{
+  "symbol": "BTC",
+  "name": "Bitcoin",
+  "timeframe": "1d",
+  "data_source": "sample_data",
+  "last_updated": "2024-01-15T00:00:00Z",
+  "prices": [
+    {
+      "timestamp": "2024-01-01T00:00:00Z",
+      "open": 42150.50,
+      "high": 42890.75,
+      "low": 41820.25,
+      "close": 42456.80,
+      "volume": 28450.67,
+      "market_cap": 831234567890,
+      "volume_usd": 1205678900
+    },
+    {
+      "timestamp": "2024-01-02T00:00:00Z",
+      "open": 42456.80,
+      "high": 43120.90,
+      "low": 42200.15,
+      "close": 42890.45,
+      "volume": 31250.89,
+      "market_cap": 839876543210,
+      "volume_usd": 1340567800
+    },
+    {
+      "timestamp": "2024-01-03T00:00:00Z",
+      "open": 42890.45,
+      "high": 44567.20,
+      "low": 42650.30,
+      "close": 44123.75,
+      "volume": 45678.12,
+      "market_cap": 864567890123,
+      "volume_usd": 2015678900
+    },
+    {
+      "timestamp": "2024-01-04T00:00:00Z",
+      "open": 44123.75,
+      "high": 45890.60,
+      "low": 43890.25,
+      "close": 45234.90,
+      "volume": 52340.78,
+      "market_cap": 886789012345,
+      "volume_usd": 2367890123
+    },
+    {
+      "timestamp": "2024-01-05T00:00:00Z",
+      "open": 45234.90,
+      "high": 46780.45,
+      "low": 44890.70,
+      "close": 46123.55,
+      "volume": 38920.45,
+      "market_cap": 904567890123,
+      "volume_usd": 1795678901
+    },
+    {
+      "timestamp": "2024-01-06T00:00:00Z",
+      "open": 46123.55,
+      "high": 47890.80,
+      "low": 45670.90,
+      "close": 47234.20,
+      "volume": 41567.89,
+      "market_cap": 926789012345,
+      "volume_usd": 1963456789
+    },
+    {
+      "timestamp": "2024-01-07T00:00:00Z",
+      "open": 47234.20,
+      "high": 48567.30,
+      "low": 46890.15,
+      "close": 47890.65,
+      "volume": 35678.23,
+      "market_cap": 939876543210,
+      "volume_usd": 1708901234
+    },
+    {
+      "timestamp": "2024-01-08T00:00:00Z",
+      "open": 47890.65,
+      "high": 49123.75,
+      "low": 47456.80,
+      "close": 48567.90,
+      "volume": 42890.67,
+      "market_cap": 953456789012,
+      "volume_usd": 2083456789
+    },
+    {
+      "timestamp": "2024-01-09T00:00:00Z",
+      "open": 48567.90,
+      "high": 50234.60,
+      "low": 48123.45,
+      "close": 49678.25,
+      "volume": 48920.34,
+      "market_cap": 975234567890,
+      "volume_usd": 2430567890
+    },
+    {
+      "timestamp": "2024-01-10T00:00:00Z",
+      "open": 49678.25,
+      "high": 51890.40,
+      "low": 49234.70,
+      "close": 51234.80,
+      "volume": 56789.12,
+      "market_cap": 1005678901234,
+      "volume_usd": 2908901234
+    },
+    {
+      "timestamp": "2024-01-11T00:00:00Z",
+      "open": 51234.80,
+      "high": 52567.90,
+      "low": 50890.25,
+      "close": 51890.45,
+      "volume": 39456.78,
+      "market_cap": 1018901234567,
+      "volume_usd": 2047890123
+    },
+    {
+      "timestamp": "2024-01-12T00:00:00Z",
+      "open": 51890.45,
+      "high": 53234.70,
+      "low": 51456.30,
+      "close": 52678.90,
+      "volume": 44567.89,
+      "market_cap": 1034567890123,
+      "volume_usd": 2347890123
+    },
+    {
+      "timestamp": "2024-01-13T00:00:00Z",
+      "open": 52678.90,
+      "high": 54123.45,
+      "low": 52234.60,
+      "close": 53456.75,
+      "volume": 41234.56,
+      "market_cap": 1049890123456,
+      "volume_usd": 2203456789
+    },
+    {
+      "timestamp": "2024-01-14T00:00:00Z",
+      "open": 53456.75,
+      "high": 54890.20,
+      "low": 52890.80,
+      "close": 54234.90,
+      "volume": 37890.23,
+      "market_cap": 1065234567890,
+      "volume_usd": 2055678901
+    },
+    {
+      "timestamp": "2024-01-15T00:00:00Z",
+      "open": 54234.90,
+      "high": 55678.45,
+      "low": 53890.70,
+      "close": 55123.60,
+      "volume": 43567.89,
+      "market_cap": 1082678901234,
+      "volume_usd": 2401234567
+    }
+  ],
+  "technical_indicators": {
+    "sma_20": 48567.23,
+    "sma_50": 46234.78,
+    "ema_12": 52890.45,
+    "ema_26": 49567.89,
+    "rsi_14": 68.45,
+    "macd": {
+      "macd_line": 1234.56,
+      "signal_line": 987.34,
+      "histogram": 247.22
+    },
+    "bollinger_bands": {
+      "upper": 56789.12,
+      "middle": 51234.56,
+      "lower": 45679.90
+    },
+    "support_levels": [50000, 48000, 45000],
+    "resistance_levels": [56000, 58000, 60000]
+  },
+  "market_metrics": {
+    "market_dominance": 52.34,
+    "fear_greed_index": 72,
+    "volatility_30d": 0.045,
+    "sharpe_ratio": 1.23,
+    "max_drawdown": -0.18,
+    "correlation_sp500": 0.34,
+    "correlation_gold": -0.12
+  }
+}
+

@@ -1,0 +1,188 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cry-a-4mcp-server"
+version = "0.1.0"
+description = "CRY-A-4MCP Server: Hybrid RAG+Knowledge Graph cryptocurrency analysis system"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+dependencies = [
+    # MCP Protocol
+    "mcp>=1.0.0",
+    "httpx>=0.25.0",
+    "pydantic>=2.0.0",
+    
+    # Crawl4AI Integration
+    "crawl4ai[cli]>=0.3.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=4.9.0",
+    
+    # Vector Database
+    "qdrant-client>=1.7.0",
+    "sentence-transformers>=2.2.0",
+    
+    # Knowledge Graph
+    "neo4j>=5.15.0",
+    # "graphiti-core>=0.3.0", # Requires Python 3.10+
+    
+    # Cryptocurrency Domain
+    "web3>=6.0.0",
+    "ccxt>=4.0.0",
+    
+    # Core Dependencies
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "python-dotenv>=1.0.0",
+    "structlog>=23.2.0",
+    "tenacity>=8.2.0",
+    
+    # Database Dependencies
+    "sqlalchemy>=2.0.23",
+    "alembic>=1.13.1",
+    
+    # Monitoring
+    "prometheus-client>=0.19.0",
+    
+    # Data Processing
+    "pandas>=2.1.0",
+    "numpy>=1.24.0",
+    "aiofiles>=23.2.0",
+    
+    # Testing
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.12.0",
+    "httpx[test]>=0.25.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.7.0",
+    "ruff>=0.1.0",
+    "pre-commit>=3.5.0",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.3.0",
+    "bandit>=1.7.5",
+    "pip-audit>=2.6.0",
+    "safety>=2.3.0",
+]
+test = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.12.0",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.3.0",
+    "httpx[test]>=0.25.0",
+    "factory-boy>=3.3.0",
+    "faker>=20.0.0",
+]
+ci = [
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.7.0",
+    "ruff>=0.1.0",
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "bandit>=1.7.5",
+    "pip-audit>=2.6.0",
+    "safety>=2.3.0",
+]
+
+[project.scripts]
+cry-a-4mcp-server = "cry_a_4mcp.server:main"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+show_error_codes = true
+namespace_packages = true
+explicit_package_bases = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+select = ["E", "F", "W", "C90", "I", "N", "UP", "YTT", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "EM", "EXE", "FA", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SIM", "TID", "TCH", "INT", "ARG", "PTH", "ERA", "PD", "PGH", "PL", "TRY", "FLY", "NPY", "RUF"]
+ignore = ["S101", "S311", "PLR0913", "PLR0912", "PLR0915"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cry_a_4mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers --cov=src --cov-report=term-missing --cov-report=xml --cov-fail-under=80"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "e2e: End-to-end tests",
+    "slow: Slow tests",
+    "smoke: Smoke tests",
+    "security: Security tests",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/venv/*",
+    "*/migrations/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", "venv311"]
+skips = ["B101", "B601"]
+
+[tool.bandit.assert_used]
+skips = ["*_test.py", "*/test_*.py"]
+
+[[tool.mypy.overrides]]
+module = [
+    "crawl4ai.*",
+    "qdrant_client.*",
+    "neo4j.*",
+    "web3.*",
+    "ccxt.*",
+    "sentence_transformers.*",
+]
+ignore_missing_imports = true
+

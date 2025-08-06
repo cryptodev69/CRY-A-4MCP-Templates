@@ -1,0 +1,492 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRY-A-4MCP Crawler Architecture</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            overflow-x: auto;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .architecture-diagram {
+            position: relative;
+            min-height: 800px;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        .component {
+            position: absolute;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+            border: 2px solid #333;
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .component:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+            border-color: #00d4ff;
+        }
+        
+        .component.active {
+            border-color: #00d4ff;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+        
+        .component h3 {
+            margin: 0 0 10px 0;
+            color: #00d4ff;
+            font-size: 1.3em;
+        }
+        
+        .component p {
+            margin: 0;
+            color: #ccc;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        
+        .component .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        /* Component Positions */
+        .extractors {
+            top: 50px;
+            left: 50px;
+            width: 280px;
+        }
+        
+        .url-mappings {
+            top: 50px;
+            left: 400px;
+            width: 280px;
+        }
+        
+        .crawlers {
+            top: 50px;
+            left: 750px;
+            width: 280px;
+        }
+        
+        .crawl-jobs {
+            top: 50px;
+            left: 1100px;
+            width: 280px;
+        }
+        
+        /* Flow Arrows */
+        .arrow {
+            position: absolute;
+            stroke: #00d4ff;
+            stroke-width: 3;
+            fill: none;
+            opacity: 0.6;
+            stroke-dasharray: 5, 5;
+            animation: dash 20s linear infinite;
+        }
+        
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -100;
+            }
+        }
+        
+        .arrow-head {
+            fill: #00d4ff;
+        }
+        
+        /* Details Panel */
+        .details-panel {
+            position: absolute;
+            top: 350px;
+            left: 50px;
+            right: 50px;
+            background: rgba(30, 30, 30, 0.9);
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 30px;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+        
+        .details-panel.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .details-panel h2 {
+            color: #00d4ff;
+            margin-top: 0;
+        }
+        
+        .details-panel ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .details-panel li {
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+            color: #ccc;
+        }
+        
+        .details-panel li:before {
+            content: "▸ ";
+            color: #00d4ff;
+            font-weight: bold;
+        }
+        
+        /* Workflow Steps */
+        .workflow {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(20, 20, 20, 0.5);
+            border-radius: 10px;
+        }
+        
+        .workflow h3 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+        }
+        
+        .workflow-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(30, 30, 30, 0.5);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .workflow-step:hover {
+            background: rgba(0, 212, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .workflow-step .number {
+            width: 30px;
+            height: 30px;
+            background: #00d4ff;
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        /* Legend */
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(30, 30, 30, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+        
+        .legend h4 {
+            margin: 0 0 10px 0;
+            color: #00d4ff;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            background: #00d4ff;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CRY-A-4MCP Crawler Architecture</h1>
+        <p class="subtitle">Interactive Architecture Diagram - Click components to explore</p>
+        
+        <div class="architecture-diagram">
+            <!-- SVG for arrows -->
+            <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+                <!-- Extractors to URL Mappings -->
+                <path class="arrow" d="M 330 150 L 400 150" />
+                <polygon class="arrow-head" points="400,145 410,150 400,155" />
+                
+                <!-- URL Mappings to Crawlers -->
+                <path class="arrow" d="M 680 150 L 750 150" />
+                <polygon class="arrow-head" points="750,145 760,150 750,155" />
+                
+                <!-- Crawlers to Crawl Jobs -->
+                <path class="arrow" d="M 1030 150 L 1100 150" />
+                <polygon class="arrow-head" points="1100,145 1110,150 1100,155" />
+            </svg>
+            
+            <!-- Components -->
+            <div class="component extractors" onclick="showDetails('extractors')">
+                <span class="icon">🔧</span>
+                <h3>Extractors</h3>
+                <p>Data Processing Engine</p>
+                <p style="margin-top: 10px; font-size: 0.8em; color: #888;">
+                    • LLM-based extraction<br>
+                    • CSS/XPath selectors<br>
+                    • API integration<br>
+                    • Reusable logic
+                </p>
+            </div>
+            
+            <div class="component url-mappings" onclick="showDetails('url-mappings')">
+                <span class="icon">🔗</span>
+                <h3>URL Mappings</h3>
+                <p>Configuration Bridge</p>
+                <p style="margin-top: 10px; font-size: 0.8em; color: #888;">
+                    • URL ↔ Extractor links<br>
+                    • Processing rules<br>
+                    • Priority categories<br>
+                    • Rate limiting
+                </p>
+            </div>
+            
+            <div class="component crawlers" onclick="showDetails('crawlers')">
+                <span class="icon">🕷️</span>
+                <h3>Crawlers</h3>
+                <p>Execution Engine</p>
+                <p style="margin-top: 10px; font-size: 0.8em; color: #888;">
+                    • Combines mappings<br>
+                    • Crawler types<br>
+                    • Concurrency control<br>
+                    • Performance stats
+                </p>
+            </div>
+            
+            <div class="component crawl-jobs" onclick="showDetails('crawl-jobs')">
+                <span class="icon">⚡</span>
+                <h3>Crawl Jobs</h3>
+                <p>Orchestration Layer</p>
+                <p style="margin-top: 10px; font-size: 0.8em; color: #888;">
+                    • Execute crawlers<br>
+                    • Real-time monitoring<br>
+                    • Job scheduling<br>
+                    • Lifecycle management
+                </p>
+            </div>
+            
+            <!-- Details Panel -->
+            <div class="details-panel" id="details-panel">
+                <h2 id="details-title">Component Details</h2>
+                <div id="details-content"></div>
+                
+                <div class="workflow">
+                    <h3>Data Flow Workflow</h3>
+                    <div class="workflow-step">
+                        <div class="number">1</div>
+                        <div>
+                            <strong>Define Extractors:</strong> Create reusable data extraction strategies for different content types
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="number">2</div>
+                        <div>
+                            <strong>Map URLs:</strong> Associate specific URLs with appropriate extractors and configure processing rules
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="number">3</div>
+                        <div>
+                            <strong>Configure Crawlers:</strong> Combine URL mappings and extractors into executable crawler configurations
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="number">4</div>
+                        <div>
+                            <strong>Execute Jobs:</strong> Run crawlers against target URLs with real-time monitoring and scheduling
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Legend -->
+            <div class="legend">
+                <h4>Legend</h4>
+                <div class="legend-item">
+                    <div class="legend-color"></div>
+                    <span>Data Flow Direction</span>
+                </div>
+                <div class="legend-item">
+                    <span style="margin-right: 10px;">🔧</span>
+                    <span>Processing Component</span>
+                </div>
+                <div class="legend-item">
+                    <span style="margin-right: 10px;">⚡</span>
+                    <span>Execution Component</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const componentDetails = {
+            'extractors': {
+                title: 'Extractors - Data Processing Engine',
+                content: `
+                    <p>The foundation layer that defines how to extract data from various sources.</p>
+                    <h4>Key Features:</h4>
+                    <ul>
+                        <li>LLM-based extraction for complex content understanding</li>
+                        <li>CSS selectors for structured HTML extraction</li>
+                        <li>XPath queries for precise element targeting</li>
+                        <li>API integration for direct data access</li>
+                        <li>Reusable extraction logic across multiple URLs</li>
+                        <li>Performance metrics tracking (usage count, success rates)</li>
+                    </ul>
+                    <h4>Extractor Types:</h4>
+                    <ul>
+                        <li><strong>LLM Extractors:</strong> Use AI models for intelligent content parsing</li>
+                        <li><strong>CSS Extractors:</strong> Target specific HTML elements using CSS selectors</li>
+                        <li><strong>XPath Extractors:</strong> Advanced path-based element selection</li>
+                        <li><strong>API Extractors:</strong> Direct API endpoint integration</li>
+                    </ul>
+                `
+            },
+            'url-mappings': {
+                title: 'URL Mappings - Configuration Bridge',
+                content: `
+                    <p>The configuration layer that connects URLs with appropriate extractors and defines processing rules.</p>
+                    <h4>Key Features:</h4>
+                    <ul>
+                        <li>Associates specific URLs with appropriate extractors</li>
+                        <li>Defines URL-specific processing rules</li>
+                        <li>Manages URL priorities and categories</li>
+                        <li>Configures rate limiting and retry logic</li>
+                        <li>Provides advanced configuration options</li>
+                    </ul>
+                    <h4>Profile Categories:</h4>
+                    <ul>
+                        <li><strong>Degen Gambler:</strong> High-risk, high-frequency trading data</li>
+                        <li><strong>Gem Hunter:</strong> Early-stage project discovery</li>
+                        <li><strong>Traditional Investor:</strong> Established market data</li>
+                        <li><strong>DeFi Yield Farmer:</strong> DeFi protocol yields and APRs</li>
+                    </ul>
+                `
+            },
+            'crawlers': {
+                title: 'Crawlers - Execution Engine',
+                content: `
+                    <p>The execution layer that combines URL mappings with extractors into executable configurations.</p>
+                    <h4>Key Features:</h4>
+                    <ul>
+                        <li>Combines URL mappings with extractors</li>
+                        <li>Defines crawler types (basic, LLM, composite)</li>
+                        <li>Manages execution parameters</li>
+                        <li>Controls concurrency and timeouts</li>
+                        <li>Tracks performance statistics</li>
+                        <li>Handles retry logic and error recovery</li>
+                    </ul>
+                    <h4>Crawler Types:</h4>
+                    <ul>
+                        <li><strong>Basic Crawler:</strong> Simple HTML parsing with CSS/XPath</li>
+                        <li><strong>LLM Crawler:</strong> AI-powered content understanding</li>
+                        <li><strong>Composite Crawler:</strong> Combines multiple extraction strategies</li>
+                    </ul>
+                `
+            },
+            'crawl-jobs': {
+                title: 'Crawl Jobs - Orchestration Layer',
+                content: `
+                    <p>The orchestration layer that executes crawler configurations against target URLs with monitoring.</p>
+                    <h4>Key Features:</h4>
+                    <ul>
+                        <li>Executes specific crawler configurations</li>
+                        <li>Provides real-time monitoring and progress tracking</li>
+                        <li>Manages job scheduling (one-time, recurring)</li>
+                        <li>Handles job lifecycle states</li>
+                        <li>Collects and stores extraction results</li>
+                        <li>Generates performance reports</li>
+                    </ul>
+                    <h4>Job States:</h4>
+                    <ul>
+                        <li><strong>Pending:</strong> Job queued for execution</li>
+                        <li><strong>Running:</strong> Actively crawling and extracting data</li>
+                        <li><strong>Completed:</strong> Successfully finished all tasks</li>
+                        <li><strong>Failed:</strong> Encountered errors during execution</li>
+                    </ul>
+                `
+            }
+        };
+        
+        let activeComponent = null;
+        
+        function showDetails(component) {
+            const panel = document.getElementById('details-panel');
+            const title = document.getElementById('details-title');
+            const content = document.getElementById('details-content');
+            
+            // Remove active class from all components
+            document.querySelectorAll('.component').forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked component
+            document.querySelector('.' + component).classList.add('active');
+            
+            // Update details panel
+            title.textContent = componentDetails[component].title;
+            content.innerHTML = componentDetails[component].content;
+            
+            // Show panel
+            panel.classList.add('show');
+            
+            activeComponent = component;
+        }
+        
+        // Show extractors by default
+        showDetails('extractors');
+    </script>
+</body>
+</html>

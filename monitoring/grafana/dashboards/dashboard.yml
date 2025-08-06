@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'CRY-A-4MCP Dashboards'
+    orgId: 1
+    folder: 'CRY-A-4MCP'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

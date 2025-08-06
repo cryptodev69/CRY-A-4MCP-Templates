@@ -1,0 +1,88 @@
+groups:
+  - name: extraction_alerts
+    rules:
+    # Alert on high extraction failure rate
+    - alert: HighExtractionFailureRate
+      expr: rate(extraction_failures_total[5m]) / rate(extraction_attempts_total[5m]) > 0.2
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'High extraction failure rate ({{ $value | printf "%.2f" }})'
+        description: 'Extraction failure rate is above 20% for the last 5 minutes.'
+
+    # Alert on slow extraction time
+    - alert: SlowExtractionTime
+      expr: extraction_time_seconds_sum / extraction_time_seconds_count > 10
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Slow extraction time ({{ $value | printf "%.2f" }}s)'
+        description: 'Average extraction time is above 10 seconds for the last 5 minutes.'
+
+    # Alert on high token usage
+    - alert: HighTokenUsage
+      expr: sum(rate(token_usage_total[1h])) > 100000
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'High token usage ({{ $value | printf "%.0f" }} tokens/hour)'
+        description: 'Token usage rate is above 100,000 tokens per hour.'
+
+    # Alert on high estimated cost
+    - alert: HighEstimatedCost
+      expr: sum(rate(estimated_cost_dollars_total[1d])) > 50
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: 'High estimated cost (${{ $value | printf "%.2f" }}/day)'
+        description: 'Estimated cost is above $50 per day.'
+
+    # Alert on low extraction quality
+    - alert: LowExtractionQuality
+      expr: avg(extraction_quality_score) < 0.7
+      for: 30m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Low extraction quality ({{ $value | printf "%.2f" }})'
+        description: 'Average extraction quality score is below 0.7 for the last 30 minutes.'
+
+    # Alert on high validation error rate
+    - alert: HighValidationErrorRate
+      expr: rate(validation_errors_total[5m]) / rate(extraction_successes_total[5m]) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'High validation error rate ({{ $value | printf "%.2f" }})'
+        description: 'Validation error rate is above 10% for the last 5 minutes.'
+
+  - name: extraction_recording_rules
+    rules:
+    # Record extraction success rate
+    - record: extraction:success_rate:5m
+      expr: rate(extraction_successes_total[5m]) / rate(extraction_attempts_total[5m])
+
+    # Record average extraction time
+    - record: extraction:avg_time_seconds:5m
+      expr: extraction_time_seconds_sum / extraction_time_seconds_count
+
+    # Record average token usage per extraction
+    - record: extraction:avg_tokens_per_extraction:5m
+      expr: rate(token_usage_total[5m]) / rate(extraction_successes_total[5m])
+
+    # Record average cost per extraction
+    - record: extraction:avg_cost_per_extraction:5m
+      expr: rate(estimated_cost_dollars_total[5m]) / rate(extraction_successes_total[5m])
+
+    # Record average content size
+    - record: extraction:avg_content_size_bytes:5m
+      expr: content_size_bytes_sum / content_size_bytes_count
+
+    # Record extraction quality by content type
+    - record: extraction:quality_by_content_type:5m
+      expr: avg by (content_type) (extraction_quality_score)

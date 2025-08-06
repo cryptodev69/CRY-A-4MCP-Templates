@@ -1,0 +1,86 @@
+{
+  "strategies": [
+    {
+      "name": "CryptoLLMExtractionStrategy",
+      "class_path": "cry_a_4mcp.crawl4ai.crypto_extraction_strategy.CryptoLLMExtractionStrategy",
+      "description": "Specialized extraction strategy for cryptocurrency content"
+    },
+    {
+      "name": "LLMExtractionStrategy",
+      "class_path": "cry_a_4mcp.crawl4ai.extraction_strategy_improved.LLMExtractionStrategy",
+      "description": "Base extraction strategy for general content"
+    },
+    {
+      "name": "EnhancedCryptoExtractionStrategy",
+      "class_path": "cry_a_4mcp.crawl4ai.enhanced_crypto_extraction.EnhancedCryptoExtractionStrategy",
+      "description": "Enhanced extraction strategy with schema validation and preprocessing"
+    }
+  ],
+  "providers": [
+    {
+      "name": "openai",
+      "models": ["gpt-4"]
+    },
+    {
+      "name": "anthropic",
+      "models": ["claude-2"]
+    }
+  ],
+  "test_scenarios": [
+    {
+      "name": "crypto_news",
+      "description": "Cryptocurrency news articles",
+      "sample_file": "../samples/crypto_news.txt"
+    },
+    {
+      "name": "social_media",
+      "description": "Social media posts about cryptocurrency",
+      "sample_file": "../samples/social_media.txt"
+    },
+    {
+      "name": "html_content",
+      "description": "HTML content with tables and formatting",
+      "sample_file": "../samples/html_content.html"
+    }
+  ],
+  "comparison_metrics": [
+    {
+      "name": "extraction_time",
+      "description": "Time taken to complete extraction",
+      "unit": "seconds",
+      "lower_is_better": true
+    },
+    {
+      "name": "token_usage",
+      "description": "Number of tokens used for extraction",
+      "unit": "tokens",
+      "lower_is_better": true
+    },
+    {
+      "name": "extraction_quality",
+      "description": "Quality score of extraction result",
+      "unit": "score",
+      "lower_is_better": false
+    },
+    {
+      "name": "field_completeness",
+      "description": "Percentage of expected fields present in result",
+      "unit": "percentage",
+      "lower_is_better": false
+    },
+    {
+      "name": "schema_validation_success",
+      "description": "Whether the extraction result passed schema validation",
+      "unit": "boolean",
+      "lower_is_better": false
+    }
+  ],
+  "comparison_settings": {
+    "runs_per_combination": 3,
+    "timeout_seconds": 120,
+    "output_directory": "./results",
+    "save_raw_results": true,
+    "generate_report": true,
+    "report_format": ["json", "markdown"]
+  }
+}

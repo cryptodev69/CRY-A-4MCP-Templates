@@ -1,0 +1,244 @@
+{
+  "framework_version": "1.0.0",
+  "project_type": "cryptocurrency-analysis-platform",
+  "standards": {
+    "security": {
+      "input_validation": "pydantic",
+      "secrets_management": "environment_variables",
+      "dependency_scanning": ["pip-audit", "bandit", "safety"],
+      "required_validations": [
+        "all_inputs_validated",
+        "no_hardcoded_secrets",
+        "parameterized_queries",
+        "pinned_dependencies"
+      ]
+    },
+    "code_quality": {
+      "formatter": "black",
+      "linter": "ruff",
+      "type_checker": "mypy",
+      "max_line_length": 88,
+      "max_function_lines": 50,
+      "docstring_style": "google",
+      "required_annotations": true,
+      "coverage_threshold": 80
+    },
+    "testing": {
+      "framework": "pytest",
+      "structure": "arrange_act_assert",
+      "mock_external_services": true,
+      "test_categories": ["unit", "integration", "e2e", "security"],
+      "required_tests": ["happy_path", "edge_cases", "error_scenarios"]
+    },
+    "architecture": {
+      "component_isolation": true,
+      "single_responsibility": true,
+      "dependency_injection": true,
+      "database_patterns": {
+        "qdrant": {
+          "collection_constant": true,
+          "typed_payload_model": true
+        },
+        "neo4j": {
+          "parameterized_queries": true,
+          "node_label_constants": true,
+          "relationship_type_constants": true
+        }
+      }
+    }
+  },
+  "required_tools": {
+    "development": {
+      "black": ">=23.0.0",
+      "ruff": ">=0.1.0",
+      "mypy": ">=1.0.0",
+      "pytest": ">=7.0.0",
+      "pytest-cov": ">=4.0.0",
+      "pre-commit": ">=3.0.0"
+    },
+    "security": {
+      "bandit": ">=1.7.0",
+      "pip-audit": ">=2.6.0",
+      "safety": ">=2.3.0"
+    },
+    "monitoring": {
+      "prometheus-client": ">=0.17.0",
+      "structlog": ">=23.0.0"
+    }
+  },
+  "file_structure": {
+    "component_template": {
+      "src/": {
+        "main.py": "entry_point",
+        "models.py": "pydantic_models",
+        "services.py": "business_logic",
+        "database/": {
+          "neo4j_client.py": "graph_database",
+          "qdrant_client.py": "vector_database"
+        },
+        "utils/": {
+          "helpers.py": "utility_functions"
+        }
+      },
+      "tests/": {
+        "test_main.py": "entry_point_tests",
+        "test_services.py": "business_logic_tests",
+        "conftest.py": "pytest_fixtures"
+      },
+      "requirements.txt": "pinned_dependencies",
+      "pyproject.toml": "tool_configuration",
+      "Dockerfile": "container_definition",
+      ".env.example": "environment_template",
+      "README.md": "component_documentation"
+    }
+  },
+  "configuration_templates": {
+    "pyproject.toml": {
+      "tool.black": {
+        "line-length": 88,
+        "target-version": ["py39"]
+      },
+      "tool.ruff": {
+        "line-length": 88,
+        "select": ["E", "F", "W", "C90", "I", "N", "UP", "S", "B", "A", "C4", "T20"],
+        "ignore": ["E501"]
+      },
+      "tool.mypy": {
+        "python_version": "3.9",
+        "strict": true,
+        "warn_return_any": true,
+        "warn_unused_configs": true
+      },
+      "tool.pytest.ini_options": {
+        "testpaths": ["tests"],
+        "python_files": ["test_*.py"],
+        "python_classes": ["Test*"],
+        "python_functions": ["test_*"],
+        "addopts": "--cov=src --cov-report=html --cov-report=term --cov-fail-under=80"
+      }
+    },
+    "pre-commit-config": {
+      "repos": [
+        {
+          "repo": "https://github.com/psf/black",
+          "rev": "23.9.1",
+          "hooks": [{"id": "black"}]
+        },
+        {
+          "repo": "https://github.com/astral-sh/ruff-pre-commit",
+          "rev": "v0.1.0",
+          "hooks": [{"id": "ruff"}]
+        },
+        {
+          "repo": "https://github.com/pre-commit/mirrors-mypy",
+          "rev": "v1.6.0",
+          "hooks": [{"id": "mypy"}]
+        }
+      ]
+    }
+  },
+  "environment_variables": {
+    "required": [
+      "DATABASE_URL",
+      "NEO4J_URI",
+      "QDRANT_HOST",
+      "REDIS_URL",
+      "JWT_SECRET",
+      "API_KEY"
+    ],
+    "optional": [
+      "LOG_LEVEL",
+      "MAX_WORKERS",
+      "CACHE_TTL",
+      "RATE_LIMIT"
+    ]
+  },
+  "monitoring_requirements": {
+    "metrics": [
+      "api_requests_total",
+      "api_request_duration_seconds",
+      "database_connections_active",
+      "cache_hit_rate",
+      "error_rate"
+    ],
+    "health_checks": [
+      "database_connectivity",
+      "external_service_availability",
+      "memory_usage",
+      "disk_space"
+    ],
+    "logging": {
+      "format": "json",
+      "fields": ["timestamp", "level", "message", "correlation_id", "component"],
+      "levels": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    }
+  },
+  "deployment": {
+    "docker": {
+      "multi_stage_build": true,
+      "non_root_user": true,
+      "health_check": true,
+      "specific_base_tags": true
+    },
+    "ci_cd": {
+      "pipeline_stages": ["lint", "test", "security_scan", "build", "deploy"],
+      "required_checks": ["code_quality", "test_coverage", "security_audit"],
+      "deployment_strategy": "blue_green"
+    }
+  },
+  "performance_guidelines": {
+    "async_programming": true,
+    "connection_pooling": true,
+    "caching_strategy": "redis",
+    "database_optimization": ["indexing", "query_optimization", "connection_pooling"]
+  },
+  "documentation_requirements": {
+    "code_comments": "complex_logic_only",
+    "api_documentation": "openapi_swagger",
+    "readme_sections": ["purpose", "quick_start", "api_docs", "environment_vars"],
+    "architecture_decisions": "adr_format"
+  },
+  "debugging_rules": {
+    "single_fix_budget": {
+      "max_file_edits": 3,
+      "max_tests": 1
+    },
+    "escalation_triggers": [
+      "repeated_stack_trace",
+      "cross_component_issue",
+      "external_dependency_failure"
+    ],
+    "scratchpad_files": [
+      "debug-blocked.md",
+      "debug-loop.md",
+      "escalate.md"
+    ]
+  },
+  "compliance_checklist": {
+    "security": [
+      "input_validation_pydantic",
+      "no_hardcoded_secrets",
+      "dependencies_pinned_audited",
+      "parameterized_queries",
+      "rate_limiting",
+      "cors_configured",
+      "auth_implemented"
+    ],
+    "quality": [
+      "black_formatted",
+      "ruff_linted",
+      "type_hints_complete",
+      "docstrings_present",
+      "functions_under_50_lines",
+      "error_handling_implemented"
+    ],
+    "testing": [
+      "unit_tests_present",
+      "integration_tests_present",
+      "mocks_for_external_services",
+      "coverage_above_80_percent",
+      "edge_cases_tested",
+      "error_scenarios_tested"
+    ]
+  }
+}

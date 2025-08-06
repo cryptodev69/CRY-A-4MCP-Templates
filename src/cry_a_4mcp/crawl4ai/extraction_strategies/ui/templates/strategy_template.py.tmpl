@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+# pyright: ignore
+# type: ignore
+# basedpyright: ignore
+# This is a template file and not valid Python syntax
+# It contains template variables that will be replaced by the template generator
+# The following line ensures this file is not treated as Python code by linters
+# pyright: strict-optional=false
+"""
+{{strategy_name}} extraction strategy for the cry_a_4mcp.crawl4ai package.
+
+This module provides a specialized extraction strategy for {{strategy_name}} content,
+with a detailed schema for extracting relevant information from {{strategy_name}} sources.
+"""
+
+import json
+import logging
+from typing import Dict, List, Optional, Any, Union
+from ..base import LLMExtractionStrategy
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger('{{strategy_name_lower}}_extraction_strategy')
+
+# type: ignore
+class {{strategy_class_name}}(LLMExtractionStrategy):
+    """Specialized extraction strategy for {{strategy_name}} content.
+    
+    {{strategy_description}}
+    """
+    
+    # type: ignore
+    def __init__(self, 
+                 provider: str = "{{default_provider}}", 
+                 api_token: Optional[str] = None,
+                 base_url: Optional[str] = None,
+                 model: Optional[str] = None,
+                 extra_args: Optional[Dict[str, Any]] = None,
+                 max_retries: int = 3,
+                 timeout: int = 60,
+                 **kwargs):
+        """Initialize the {{strategy_name}} extraction strategy.
+        
+        Args:
+            provider: LLM provider (e.g., "openai", "groq", "openrouter")
+            api_token: API token for the LLM provider
+            base_url: Optional base URL for the API
+            model: Model to use for extraction
+            extra_args: Additional arguments to pass to the API
+            max_retries: Maximum number of retries for API calls
+            timeout: Timeout for API calls in seconds
+            **kwargs: Additional configuration options
+        """
+        # Define the {{strategy_name}}-specific schema
+        # type: ignore
+        {{strategy_name_lower}}_schema = {{schema_json}}
+        
+        # Define the instruction for the LLM
+        # type: ignore
+        instruction = """{{instruction}}"""
+        
+        # Initialize the base class with the schema and instruction
+        super().__init__(
+            provider=provider,
+            api_token=api_token,
+            instruction=instruction,
+            schema={{strategy_name_lower}}_schema,
+            base_url=base_url,
+            model=model,
+            extra_args=extra_args,
+            max_retries=max_retries,
+            timeout=timeout,
+            **kwargs
+        )

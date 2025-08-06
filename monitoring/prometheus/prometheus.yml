@@ -1,0 +1,37 @@
+# Prometheus configuration for CRY-A-4MCP extraction monitoring
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+scrape_configs:
+  # Scrape the extraction service
+  - job_name: 'extraction_metrics'
+    metrics_path: /metrics
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['localhost:8000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '(.*)'
+        replacement: '${1}'
+
+  # Scrape node_exporter for host metrics
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+
+  # Scrape Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+rule_files:
+  - 'extraction_rules.yml'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['localhost:9093']

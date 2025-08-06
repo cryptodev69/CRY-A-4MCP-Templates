@@ -1,0 +1,390 @@
+{
+  "benchmark_id": "crypto-extraction-benchmark-20230615-123456",
+  "timestamp": "2023-06-15T12:34:56Z",
+  "config": {
+    "runs_per_scenario": 3,
+    "timeout_seconds": 120
+  },
+  "system_info": {
+    "cpu": "Apple M1 Pro",
+    "memory": "16GB",
+    "os": "macOS 12.6",
+    "python_version": "3.10.4"
+  },
+  "results": [
+    {
+      "scenario": "crypto_news",
+      "provider": "openai",
+      "model": "gpt-4",
+      "metrics": {
+        "extraction_time": {
+          "mean": 3.45,
+          "min": 3.12,
+          "max": 3.89,
+          "std_dev": 0.32,
+          "unit": "seconds"
+        },
+        "token_usage": {
+          "mean": 1250,
+          "min": 1150,
+          "max": 1350,
+          "std_dev": 82,
+          "unit": "tokens"
+        },
+        "estimated_cost": {
+          "mean": 0.075,
+          "min": 0.069,
+          "max": 0.081,
+          "std_dev": 0.005,
+          "unit": "USD"
+        },
+        "extraction_quality": {
+          "mean": 92.5,
+          "min": 90.0,
+          "max": 95.0,
+          "std_dev": 2.1,
+          "unit": "score"
+        },
+        "field_completeness": {
+          "mean": 100.0,
+          "min": 100.0,
+          "max": 100.0,
+          "std_dev": 0.0,
+          "unit": "percentage"
+        }
+      },
+      "runs": [
+        {
+          "run_id": 1,
+          "extraction_time": 3.12,
+          "token_usage": 1150,
+          "estimated_cost": 0.069,
+          "extraction_quality": 90.0,
+          "field_completeness": 100.0,
+          "success": true,
+          "error": null
+        },
+        {
+          "run_id": 2,
+          "extraction_time": 3.45,
+          "token_usage": 1250,
+          "estimated_cost": 0.075,
+          "extraction_quality": 92.5,
+          "field_completeness": 100.0,
+          "success": true,
+          "error": null
+        },
+        {
+          "run_id": 3,
+          "extraction_time": 3.89,
+          "token_usage": 1350,
+          "estimated_cost": 0.081,
+          "extraction_quality": 95.0,
+          "field_completeness": 100.0,
+          "success": true,
+          "error": null
+        }
+      ]
+    },
+    {
+      "scenario": "crypto_news",
+      "provider": "anthropic",
+      "model": "claude-2",
+      "metrics": {
+        "extraction_time": {
+          "mean": 4.12,
+          "min": 3.95,
+          "max": 4.35,
+          "std_dev": 0.17,
+          "unit": "seconds"
+        },
+        "token_usage": {
+          "mean": 1350,
+          "min": 1300,
+          "max": 1400,
+          "std_dev": 41,
+          "unit": "tokens"
+        },
+        "estimated_cost": {
+          "mean": 0.068,
+          "min": 0.065,
+          "max": 0.070,
+          "std_dev": 0.002,
+          "unit": "USD"
+        },
+        "extraction_quality": {
+          "mean": 94.0,
+          "min": 93.0,
+          "max": 95.0,
+          "std_dev": 0.82,
+          "unit": "score"
+        },
+        "field_completeness": {
+          "mean": 100.0,
+          "min": 100.0,
+          "max": 100.0,
+          "std_dev": 0.0,
+          "unit": "percentage"
+        }
+      },
+      "runs": [
+        {
+          "run_id": 1,
+          "extraction_time": 3.95,
+          "token_usage": 1300,
+          "estimated_cost": 0.065,
+          "extraction_quality": 93.0,
+          "field_completeness": 100.0,
+          "success": true,
+          "error": null
+        },
+        {
+          "run_id": 2,
+          "extraction_time": 4.12,
+          "token_usage": 1350,
+          "estimated_cost": 0.068,
+          "extraction_quality": 94.0,
+          "field_completeness": 100.0,
+          "success": true,
+          "error": null
+        },
+        {
+          "run_id": 3,
+          "extraction_time": 4.35,
+          "token_usage": 1400,
+          "estimated_cost": 0.070,
+          "extraction_quality": 95.0,
+          "field_completeness": 100.0,
+          "success": true,
+          "error": null
+        }
+      ]
+    },
+    {
+      "scenario": "social_media",
+      "provider": "openai",
+      "model": "gpt-4",
+      "metrics": {
+        "extraction_time": {
+          "mean": 2.85,
+          "min": 2.65,
+          "max": 3.05,
+          "std_dev": 0.16,
+          "unit": "seconds"
+        },
+        "token_usage": {
+          "mean": 950,
+          "min": 900,
+          "max": 1000,
+          "std_dev": 41,
+          "unit": "tokens"
+        },
+        "estimated_cost": {
+          "mean": 0.057,
+          "min": 0.054,
+          "max": 0.060,
+          "std_dev": 0.002,
+          "unit": "USD"
+        },
+        "extraction_quality": {
+          "mean": 88.0,
+          "min": 85.0,
+          "max": 91.0,
+          "std_dev": 2.45,
+          "unit": "score"
+        },
+        "field_completeness": {
+          "mean": 100.0,
+          "min": 100.0,
+          "max": 100.0,
+          "std_dev": 0.0,
+          "unit": "percentage"
+        }
+      },
+      "runs": [
+        {
+          "run_id": 1,
+          "extraction_time": 2.65,
+          "token_usage": 900,
+          "estimated_cost": 0.054,
+          "extraction_quality": 85.0,
+          "field_completeness": 100.0,
+          "success": true,
+          "error": null
+        },
+        {
+          "run_id": 2,
+          "extraction_time": 2.85,
+          "token_usage": 950,
+          "estimated_cost": 0.057,
+          "extraction_quality": 88.0,
+          "field_completeness": 100.0,
+          "success": true,
+          "error": null
+        },
+        {
+          "run_id": 3,
+          "extraction_time": 3.05,
+          "token_usage": 1000,
+          "estimated_cost": 0.060,
+          "extraction_quality": 91.0,
+          "field_completeness": 100.0,
+          "success": true,
+          "error": null
+        }
+      ]
+    },
+    {
+      "scenario": "long_content",
+      "provider": "openai",
+      "model": "gpt-4",
+      "metrics": {
+        "extraction_time": {
+          "mean": 12.35,
+          "min": 11.85,
+          "max": 12.95,
+          "std_dev": 0.45,
+          "unit": "seconds"
+        },
+        "token_usage": {
+          "mean": 7500,
+          "min": 7200,
+          "max": 7800,
+          "std_dev": 245,
+          "unit": "tokens"
+        },
+        "estimated_cost": {
+          "mean": 0.45,
+          "min": 0.432,
+          "max": 0.468,
+          "std_dev": 0.015,
+          "unit": "USD"
+        },
+        "extraction_quality": {
+          "mean": 85.0,
+          "min": 82.0,
+          "max": 88.0,
+          "std_dev": 2.45,
+          "unit": "score"
+        },
+        "field_completeness": {
+          "mean": 100.0,
+          "min": 100.0,
+          "max": 100.0,
+          "std_dev": 0.0,
+          "unit": "percentage"
+        }
+      },
+      "runs": [
+        {
+          "run_id": 1,
+          "extraction_time": 11.85,
+          "token_usage": 7200,
+          "estimated_cost": 0.432,
+          "extraction_quality": 82.0,
+          "field_completeness": 100.0,
+          "success": true,
+          "error": null
+        },
+        {
+          "run_id": 2,
+          "extraction_time": 12.35,
+          "token_usage": 7500,
+          "estimated_cost": 0.45,
+          "extraction_quality": 85.0,
+          "field_completeness": 100.0,
+          "success": true,
+          "error": null
+        },
+        {
+          "run_id": 3,
+          "extraction_time": 12.95,
+          "token_usage": 7800,
+          "estimated_cost": 0.468,
+          "extraction_quality": 88.0,
+          "field_completeness": 100.0,
+          "success": true,
+          "error": null
+        }
+      ]
+    }
+  ],
+  "comparisons": {
+    "by_provider": {
+      "extraction_time": {
+        "openai": {
+          "mean": 6.22,
+          "std_dev": 4.25,
+          "rank": 1
+        },
+        "anthropic": {
+          "mean": 4.12,
+          "std_dev": 0.17,
+          "rank": 2
+        }
+      },
+      "extraction_quality": {
+        "openai": {
+          "mean": 88.5,
+          "std_dev": 3.75,
+          "rank": 2
+        },
+        "anthropic": {
+          "mean": 94.0,
+          "std_dev": 0.82,
+          "rank": 1
+        }
+      },
+      "estimated_cost": {
+        "openai": {
+          "mean": 0.194,
+          "std_dev": 0.175,
+          "rank": 2
+        },
+        "anthropic": {
+          "mean": 0.068,
+          "std_dev": 0.002,
+          "rank": 1
+        }
+      }
+    },
+    "by_scenario": {
+      "extraction_time": {
+        "crypto_news": {
+          "mean": 3.79,
+          "std_dev": 0.45
+        },
+        "social_media": {
+          "mean": 2.85,
+          "std_dev": 0.16
+        },
+        "long_content": {
+          "mean": 12.35,
+          "std_dev": 0.45
+        }
+      },
+      "extraction_quality": {
+        "crypto_news": {
+          "mean": 93.25,
+          "std_dev": 1.75
+        },
+        "social_media": {
+          "mean": 88.0,
+          "std_dev": 2.45
+        },
+        "long_content": {
+          "mean": 85.0,
+          "std_dev": 2.45
+        }
+      }
+    }
+  },
+  "summary": {
+    "fastest_provider": "openai",
+    "highest_quality_provider": "anthropic",
+    "most_cost_effective_provider": "anthropic",
+    "easiest_scenario": "social_media",
+    "most_challenging_scenario": "long_content",
+    "overall_success_rate": 100.0
+  }
+}

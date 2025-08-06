@@ -1,0 +1,43 @@
+{
+  "name": "cry-a-4mcp-templates",
+  "version": "1.0.0",
+  "description": "CRY-A-4MCP Enhanced Templates Package - Unified Development Environment",
+  "scripts": {
+    "dev": "./start-dev.sh",
+    "start": "./start-dev.sh",
+    "frontend": "cd frontend && PORT=5000 npm start",
+    "backend": "cd starter-mcp-server && source venv311/bin/activate && python -m src.cry_a_4mcp.web_api",
+    "install-frontend": "cd frontend && npm install",
+    "install-backend": "cd starter-mcp-server && python -m pip install -r requirements.txt",
+    "setup": "npm run install-frontend && npm run install-backend",
+    "test-frontend": "cd frontend && npm test",
+    "test-backend": "cd starter-mcp-server && source venv311/bin/activate && python -m pytest",
+    "build-frontend": "cd frontend && npm run build"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "python": ">=3.9.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/cry-a-4mcp-templates"
+  },
+  "keywords": [
+    "crypto",
+    "crawling",
+    "mcp",
+    "crawl4ai",
+    "extraction",
+    "llm"
+  ],
+  "author": "CRY-A-4MCP Team",
+  "license": "MIT",
+  "dependencies": {
+    "@playwright/test": "^1.54.1"
+  }
+}

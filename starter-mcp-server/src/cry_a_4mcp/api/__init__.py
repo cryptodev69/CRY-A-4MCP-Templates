@@ -1,0 +1,1 @@
+"""API module for CRY-A-4MCP web endpoints."""

@@ -1,0 +1,234 @@
+{
+  "tokens": [
+    {
+      "id": "bitcoin",
+      "name": "Bitcoin",
+      "symbol": "BTC",
+      "type": "cryptocurrency",
+      "network": "Bitcoin",
+      "contract_address": null,
+      "market_cap_rank": 1,
+      "description": "The first and largest cryptocurrency by market capitalization, created by Satoshi Nakamoto in 2009.",
+      "website": "https://bitcoin.org",
+      "whitepaper": "https://bitcoin.org/bitcoin.pdf",
+      "launch_date": "2009-01-03",
+      "consensus_mechanism": "Proof of Work",
+      "max_supply": 21000000,
+      "circulating_supply": 19500000,
+      "categories": ["store_of_value", "digital_gold", "payment"],
+      "social_links": {
+        "twitter": "@bitcoin",
+        "reddit": "r/Bitcoin",
+        "github": "https://github.com/bitcoin/bitcoin"
+      }
+    },
+    {
+      "id": "ethereum",
+      "name": "Ethereum",
+      "symbol": "ETH",
+      "type": "cryptocurrency",
+      "network": "Ethereum",
+      "contract_address": null,
+      "market_cap_rank": 2,
+      "description": "A decentralized platform for smart contracts and decentralized applications.",
+      "website": "https://ethereum.org",
+      "whitepaper": "https://ethereum.org/en/whitepaper/",
+      "launch_date": "2015-07-30",
+      "consensus_mechanism": "Proof of Stake",
+      "max_supply": null,
+      "circulating_supply": 120000000,
+      "categories": ["smart_contracts", "defi", "nft", "platform"],
+      "social_links": {
+        "twitter": "@ethereum",
+        "reddit": "r/ethereum",
+        "github": "https://github.com/ethereum"
+      }
+    },
+    {
+      "id": "solana",
+      "name": "Solana",
+      "symbol": "SOL",
+      "type": "cryptocurrency",
+      "network": "Solana",
+      "contract_address": null,
+      "market_cap_rank": 5,
+      "description": "A high-performance blockchain supporting decentralized apps and crypto-currencies.",
+      "website": "https://solana.com",
+      "whitepaper": "https://solana.com/solana-whitepaper.pdf",
+      "launch_date": "2020-03-16",
+      "consensus_mechanism": "Proof of History + Proof of Stake",
+      "max_supply": null,
+      "circulating_supply": 400000000,
+      "categories": ["smart_contracts", "defi", "nft", "high_throughput"],
+      "social_links": {
+        "twitter": "@solana",
+        "reddit": "r/solana",
+        "github": "https://github.com/solana-labs"
+      }
+    }
+  ],
+  "exchanges": [
+    {
+      "id": "binance",
+      "name": "Binance",
+      "type": "centralized_exchange",
+      "country": "Malta",
+      "founded": "2017-07-14",
+      "ceo": "Changpeng Zhao",
+      "website": "https://binance.com",
+      "trading_volume_24h": 15000000000,
+      "supported_countries": 180,
+      "features": ["spot_trading", "futures", "options", "staking", "lending"],
+      "security_features": ["2fa", "cold_storage", "insurance_fund"],
+      "social_links": {
+        "twitter": "@binance",
+        "telegram": "@binanceexchange"
+      }
+    },
+    {
+      "id": "coinbase",
+      "name": "Coinbase",
+      "type": "centralized_exchange",
+      "country": "United States",
+      "founded": "2012-06-20",
+      "ceo": "Brian Armstrong",
+      "website": "https://coinbase.com",
+      "trading_volume_24h": 3000000000,
+      "supported_countries": 100,
+      "features": ["spot_trading", "custody", "institutional", "staking"],
+      "security_features": ["2fa", "cold_storage", "fdic_insured"],
+      "social_links": {
+        "twitter": "@coinbase",
+        "linkedin": "coinbase"
+      }
+    },
+    {
+      "id": "uniswap",
+      "name": "Uniswap",
+      "type": "decentralized_exchange",
+      "network": "Ethereum",
+      "founded": "2018-11-02",
+      "founder": "Hayden Adams",
+      "website": "https://uniswap.org",
+      "protocol_version": "v3",
+      "tvl": 4500000000,
+      "features": ["amm", "liquidity_mining", "governance", "cross_chain"],
+      "governance_token": "UNI",
+      "social_links": {
+        "twitter": "@Uniswap",
+        "discord": "uniswap",
+        "github": "https://github.com/Uniswap"
+      }
+    }
+  ],
+  "protocols": [
+    {
+      "id": "aave",
+      "name": "Aave",
+      "type": "defi_protocol",
+      "category": "lending",
+      "network": ["Ethereum", "Polygon", "Avalanche"],
+      "founded": "2017-01-01",
+      "founder": "Stani Kulechov",
+      "website": "https://aave.com",
+      "tvl": 6800000000,
+      "governance_token": "AAVE",
+      "features": ["lending", "borrowing", "flash_loans", "rate_switching"],
+      "security_audits": ["Trail of Bits", "Consensys Diligence", "OpenZeppelin"],
+      "social_links": {
+        "twitter": "@AaveAave",
+        "discord": "aave",
+        "github": "https://github.com/aave"
+      }
+    },
+    {
+      "id": "compound",
+      "name": "Compound",
+      "type": "defi_protocol",
+      "category": "lending",
+      "network": ["Ethereum"],
+      "founded": "2018-09-27",
+      "founder": "Robert Leshner",
+      "website": "https://compound.finance",
+      "tvl": 2100000000,
+      "governance_token": "COMP",
+      "features": ["lending", "borrowing", "algorithmic_rates"],
+      "security_audits": ["Trail of Bits", "OpenZeppelin"],
+      "social_links": {
+        "twitter": "@compoundfinance",
+        "discord": "compound",
+        "github": "https://github.com/compound-finance"
+      }
+    }
+  ],
+  "people": [
+    {
+      "id": "satoshi_nakamoto",
+      "name": "Satoshi Nakamoto",
+      "type": "founder",
+      "known_for": ["Bitcoin"],
+      "status": "anonymous",
+      "first_appearance": "2008-10-31",
+      "last_known_activity": "2011-04-23",
+      "contributions": ["Bitcoin whitepaper", "Bitcoin protocol", "Proof of Work"],
+      "estimated_btc_holdings": 1000000
+    },
+    {
+      "id": "vitalik_buterin",
+      "name": "Vitalik Buterin",
+      "type": "founder",
+      "known_for": ["Ethereum"],
+      "nationality": "Canadian-Russian",
+      "birth_year": 1994,
+      "education": "University of Waterloo (dropped out)",
+      "contributions": ["Ethereum whitepaper", "Ethereum protocol", "Proof of Stake research"],
+      "social_links": {
+        "twitter": "@VitalikButerin",
+        "blog": "https://vitalik.ca"
+      }
+    },
+    {
+      "id": "changpeng_zhao",
+      "name": "Changpeng Zhao",
+      "type": "ceo",
+      "known_for": ["Binance"],
+      "nationality": "Canadian",
+      "birth_year": 1977,
+      "education": "McGill University",
+      "previous_experience": ["Bloomberg", "Fusion Systems", "OKCoin"],
+      "social_links": {
+        "twitter": "@cz_binance"
+      }
+    }
+  ],
+  "organizations": [
+    {
+      "id": "ethereum_foundation",
+      "name": "Ethereum Foundation",
+      "type": "non_profit",
+      "founded": "2014-07-01",
+      "location": "Switzerland",
+      "mission": "Support Ethereum protocol development and ecosystem growth",
+      "focus_areas": ["research", "development", "education", "grants"],
+      "website": "https://ethereum.foundation",
+      "social_links": {
+        "twitter": "@EthereumFoundation",
+        "blog": "https://blog.ethereum.org"
+      }
+    },
+    {
+      "id": "solana_labs",
+      "name": "Solana Labs",
+      "type": "for_profit",
+      "founded": "2018-01-01",
+      "location": "San Francisco, USA",
+      "mission": "Scale blockchain for global adoption",
+      "focus_areas": ["protocol_development", "ecosystem_growth", "infrastructure"],
+      "website": "https://solanalabs.com",
+      "social_links": {
+        "twitter": "@solanalabs"
+      }
+    }
+  ]
+}
+
