@@ -29,114 +29,19 @@
 import React, { useState, useEffect } from 'react';
 // import { useApp } from '../contexts/AppContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { Plus, Edit, Trash2, Power, PowerOff, Settings, ArrowUp, ArrowDown, Link as LinkIcon, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Power, PowerOff, Settings, ArrowUp, ArrowDown, Link as LinkIcon, X, AlertCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { urlMappingsService } from '../services/urlMappingsService';
+import { ApiClientError } from '../services/apiClient';
+import { URLConfig, URLMappingDisplay, URLMappingFormData, Extractor } from '../types/urlMappings';
 
-/**
- * URL Configuration Interface
- * 
- * Represents a URL configuration for technical mapping purposes only.
- * Contains only technical fields required for URL mapping operations.
- * Business-related fields are managed separately in the URL Manager.
- * 
- * @interface URLConfig
- */
-interface URLConfig {
-  /** Unique identifier for the URL configuration */
-  id: number;
-  /** The URL pattern or specific URL to be mapped */
-  url: string;
-  /** Display name for the URL configuration */
-  name: string;
-  /** Whether this URL configuration is currently active */
-  is_active: boolean;
-  /** Timestamp when the configuration was created */
-  created_at: string;
-  /** Timestamp when the configuration was last updated */
-  updated_at: string;
-}
+// URLConfig interface is now imported from '../types/urlMappings'
 
-/**
- * Extractor Interface
- * 
- * Represents an extractor that can be associated with URL mappings.
- * Extractors define how data should be extracted from crawled URLs.
- * 
- * @interface Extractor
- */
-interface Extractor {
-  /** Unique identifier for the extractor */
-  id: number;
-  /** Display name of the extractor */
-  name: string;
-  /** Type/category of the extractor */
-  type: string;
-  /** Whether this extractor is currently active */
-  is_active: boolean;
-  /** Description of what this extractor does */
-  description?: string;
-}
+// Extractor interface is now imported from '../types/urlMappings'
 
-/**
- * URL Mapping Form Data Interface
- * 
- * Represents the structure of data used in the URL mapping form.
- * This mirrors the url_mappings database table schema.
- * 
- * @interface URLMappingFormData
- */
-interface URLMappingFormData {
-  /** Display name for the URL mapping */
-  name: string;
-  /** Reference to the URL configuration ID */
-  url_config_id: number | null;
-  /** References to extractor IDs (supports multiple extractors) */
-  extractor_ids: number[];
-  /** Rate limit in requests per minute */
-  rate_limit: number;
-  /** Priority level (1-100, higher = more priority) */
-  priority: number;
-  /** Whether this mapping is currently active */
-  is_active: boolean;
-  /** JSON string containing metadata */
-  metadata: string;
-  /** JSON string containing validation rules */
-  validation_rules: string;
-  /** JSON string containing crawler-specific settings */
-  crawler_settings: string;
-  /** Array of tags for categorization */
-  tags: string[];
-  /** Additional notes or comments */
-  notes: string;
-  /** Category classification */
-  category: string;
-}
+// URLMappingFormData interface is now imported from '../types/urlMappings'
 
-/**
- * URL Mapping Display Interface
- * 
- * Extended interface for displaying URL mappings with additional computed fields.
- * 
- * @interface URLMappingDisplay
- */
-interface URLMappingDisplay extends URLMappingFormData {
-  /** Unique identifier for the mapping */
-  id: number;
-  /** URL pattern from the associated URL configuration */
-  url: string;
-  /** Configuration object parsed from JSON */
-  config?: any;
-  /** Number of successful extractions */
-  extractionCount: number;
-  /** Success rate percentage */
-  successRate: number;
-  /** Timestamp of last extraction */
-  lastExtracted: Date | null;
-  /** Timestamp when the mapping was created */
-  created_at: string;
-  /** Timestamp when the mapping was last updated */
-  updated_at: string;
-}
+// URLMappingDisplay interface is now imported from '../types/urlMappings'
 
 /**
  * Mock Data: URL Configurations
@@ -147,44 +52,84 @@ interface URLMappingDisplay extends URLMappingFormData {
  */
 const MOCK_URL_CONFIGS: URLConfig[] = [
   {
-    id: 1,
+    id: '1',
     url: 'https://example-news.com/*',
     name: 'Example News Site',
-    is_active: true,
-    created_at: '2024-01-15T10:00:00Z',
-    updated_at: '2024-01-15T10:00:00Z'
+    isActive: true,
+    createdAt: '2024-01-15T10:00:00Z',
+    updatedAt: '2024-01-15T10:00:00Z',
+    baseUrl: 'https://example-news.com',
+    profileType: 'news',
+    category: 'news',
+    description: 'Example news site configuration',
+    priority: 5,
+    scrapingDifficulty: 5,
+    hasOfficialAPI: false,
+    hasOfficialApi: false
   },
   {
-    id: 2,
+    id: '2',
     url: 'https://api.crypto-data.com/v1/*',
     name: 'Crypto Data API',
-    is_active: true,
-    created_at: '2024-01-16T14:30:00Z',
-    updated_at: '2024-01-16T14:30:00Z'
+    isActive: true,
+    createdAt: '2024-01-16T14:30:00Z',
+    updatedAt: '2024-01-16T14:30:00Z',
+    baseUrl: 'https://api.crypto-data.com',
+    profileType: 'api',
+    category: 'crypto',
+    description: 'Crypto data API configuration',
+    priority: 8,
+    scrapingDifficulty: 3,
+    hasOfficialAPI: true,
+    hasOfficialApi: true
   },
   {
-    id: 3,
+    id: '3',
     url: 'https://social-platform.com/posts/*',
     name: 'Social Media Posts',
-    is_active: false,
-    created_at: '2024-01-17T09:15:00Z',
-    updated_at: '2024-01-17T09:15:00Z'
+    isActive: false,
+    createdAt: '2024-01-17T09:15:00Z',
+    updatedAt: '2024-01-17T09:15:00Z',
+    baseUrl: 'https://social-platform.com',
+    profileType: 'social',
+    category: 'social',
+    description: 'Social media posts configuration',
+    priority: 3,
+    scrapingDifficulty: 8,
+    hasOfficialAPI: false,
+    hasOfficialApi: false
   },
   {
-    id: 4,
+    id: '4',
     url: 'https://ecommerce-site.com/products/*',
     name: 'E-commerce Products',
-    is_active: true,
-    created_at: '2024-01-18T16:45:00Z',
-    updated_at: '2024-01-18T16:45:00Z'
+    isActive: true,
+    createdAt: '2024-01-18T16:45:00Z',
+    updatedAt: '2024-01-18T16:45:00Z',
+    baseUrl: 'https://ecommerce-site.com',
+    profileType: 'ecommerce',
+    category: 'ecommerce',
+    description: 'E-commerce products configuration',
+    priority: 6,
+    scrapingDifficulty: 5,
+    hasOfficialAPI: false,
+    hasOfficialApi: false
   },
   {
-    id: 5,
+    id: '5',
     url: 'https://blog-platform.com/articles/*',
     name: 'Blog Articles',
-    is_active: true,
-    created_at: '2024-01-19T11:20:00Z',
-    updated_at: '2024-01-19T11:20:00Z'
+    isActive: true,
+    createdAt: '2024-01-19T11:20:00Z',
+    updatedAt: '2024-01-19T11:20:00Z',
+    baseUrl: 'https://blog-platform.com',
+    profileType: 'blog',
+    category: 'content',
+    description: 'Blog articles configuration',
+    priority: 4,
+    scrapingDifficulty: 3,
+    hasOfficialAPI: false,
+    hasOfficialApi: false
   }
 ];
 
@@ -196,45 +141,45 @@ const MOCK_URL_CONFIGS: URLConfig[] = [
  */
 const MOCK_EXTRACTORS: Extractor[] = [
   {
-    id: 1,
+    id: '1',
     name: 'Article Content Extractor',
     type: 'content',
-    is_active: true,
+    isActive: true,
     description: 'Extracts article title, content, and metadata from news sites'
   },
   {
-    id: 2,
+    id: '2',
     name: 'API JSON Parser',
     type: 'api',
-    is_active: true,
+    isActive: true,
     description: 'Parses JSON responses from REST APIs'
   },
   {
-    id: 3,
+    id: '3',
     name: 'Social Media Post Extractor',
     type: 'social',
-    is_active: true,
+    isActive: true,
     description: 'Extracts posts, comments, and engagement metrics'
   },
   {
-    id: 4,
+    id: '4',
     name: 'Product Information Extractor',
     type: 'ecommerce',
-    is_active: true,
+    isActive: true,
     description: 'Extracts product details, prices, and reviews'
   },
   {
-    id: 5,
+    id: '5',
     name: 'Generic HTML Extractor',
     type: 'html',
-    is_active: true,
+    isActive: true,
     description: 'General-purpose HTML content extraction'
   },
   {
-    id: 6,
+    id: '6',
     name: 'Image Metadata Extractor',
     type: 'media',
-    is_active: false,
+    isActive: false,
     description: 'Extracts metadata from images and media files'
   }
 ];
@@ -247,32 +192,33 @@ const MOCK_EXTRACTORS: Extractor[] = [
  */
 const MOCK_URL_MAPPINGS: URLMappingDisplay[] = [
   {
-    id: 1,
+    id: '1',
     name: 'News Article Mapping',
     url: 'https://example-news.com/*',
-    url_config_id: 1,
-    extractor_ids: [1],
-    rate_limit: 60,
+    configurationId: '1',
+    extractorId: '1',
+    extractorIds: ['1'],
+    rateLimit: 60,
     priority: 10,
-    is_active: true,
-    metadata: JSON.stringify({
+    isActive: true,
+    metadata: {
       source: 'news',
       language: 'en',
       region: 'US'
-    }),
-    validation_rules: JSON.stringify({
+    },
+    validationRules: {
       required: true,
       minLength: 100,
       maxLength: 10000
-    }),
-    crawler_settings: JSON.stringify({
+    },
+    crawlerSettings: {
       timeout: 30000,
       retryAttempts: 3,
       retryDelay: 1000,
       userAgent: 'NewsBot/1.0',
       delay: 2000,
       maxRedirects: 5
-    }),
+    },
     tags: ['news', 'articles', 'content'],
     notes: 'Primary news content extraction mapping',
     category: 'news',
@@ -283,28 +229,29 @@ const MOCK_URL_MAPPINGS: URLMappingDisplay[] = [
     },
     extractionCount: 1247,
     successRate: 94.2,
-    lastExtracted: new Date('2024-01-20T15:30:00Z'),
+    lastExtracted: '2024-01-20T15:30:00Z',
     created_at: '2024-01-15T10:30:00Z',
     updated_at: '2024-01-20T15:30:00Z'
   },
   {
-    id: 2,
+    id: '2',
     name: 'Crypto API Mapping',
     url: 'https://api.crypto-data.com/v1/*',
-    url_config_id: 2,
-    extractor_ids: [2],
-    rate_limit: 120,
+    configurationId: '2',
+    extractorId: '2',
+    extractorIds: ['2'],
+    rateLimit: 120,
     priority: 8,
-    is_active: true,
-    metadata: JSON.stringify({
+    isActive: true,
+    metadata: {
       dataType: 'financial',
       updateFrequency: 'realtime'
-    }),
-    validation_rules: JSON.stringify({
+    },
+    validationRules: {
       required: true,
       format: 'json'
-    }),
-    crawler_settings: JSON.stringify({
+    },
+    crawlerSettings: {
       timeout: 15000,
       retryAttempts: 5,
       retryDelay: 500,
@@ -312,7 +259,7 @@ const MOCK_URL_MAPPINGS: URLMappingDisplay[] = [
         'Authorization': 'Bearer token',
         'Accept': 'application/json'
       }
-    }),
+    },
     tags: ['crypto', 'api', 'financial'],
     notes: 'High-frequency crypto data extraction',
     category: 'api',
@@ -323,33 +270,34 @@ const MOCK_URL_MAPPINGS: URLMappingDisplay[] = [
     },
     extractionCount: 5632,
     successRate: 98.7,
-    lastExtracted: new Date('2024-01-20T16:45:00Z'),
+    lastExtracted: '2024-01-20T16:45:00Z',
     created_at: '2024-01-16T14:45:00Z',
     updated_at: '2024-01-20T16:45:00Z'
   },
   {
-    id: 3,
+    id: '3',
     name: 'Product Catalog Mapping',
     url: 'https://ecommerce-site.com/products/*',
-    url_config_id: 4,
-    extractor_ids: [4, 5],
-    rate_limit: 30,
+    configurationId: '4',
+    extractorId: '4',
+    extractorIds: ['4'],
+    rateLimit: 30,
     priority: 6,
-    is_active: true,
-    metadata: JSON.stringify({
+    isActive: true,
+    metadata: {
       category: 'ecommerce',
       priceTracking: true
-    }),
-    validation_rules: JSON.stringify({
+    },
+    validationRules: {
       required: false,
       minLength: 50
-    }),
-    crawler_settings: JSON.stringify({
+    },
+    crawlerSettings: {
       timeout: 45000,
       retryAttempts: 2,
       retryDelay: 2000,
       delay: 5000
-    }),
+    },
     tags: ['ecommerce', 'products', 'prices'],
     notes: 'Product information and pricing data',
     category: 'ecommerce',
@@ -360,7 +308,7 @@ const MOCK_URL_MAPPINGS: URLMappingDisplay[] = [
     },
     extractionCount: 892,
     successRate: 87.3,
-    lastExtracted: new Date('2024-01-20T12:15:00Z'),
+    lastExtracted: '2024-01-20T12:15:00Z',
     created_at: '2024-01-18T17:00:00Z',
     updated_at: '2024-01-20T12:15:00Z'
   }
@@ -373,14 +321,15 @@ const MOCK_URL_MAPPINGS: URLMappingDisplay[] = [
  */
 const DEFAULT_FORM_DATA: URLMappingFormData = {
   name: '',
-  url_config_id: null,
-  extractor_ids: [],
-  rate_limit: 60,
+  configurationId: null,
+  extractorId: null, // Legacy single extractor support
+  extractorIds: [], // New multiple extractors support
+  rateLimit: 60,
   priority: 5,
-  is_active: true,
+  isActive: true,
   metadata: '{}',
-  validation_rules: '{}',
-  crawler_settings: JSON.stringify({
+  validationRules: '{}',
+  crawlerSettings: JSON.stringify({
     timeout: 30000,
     retryAttempts: 3,
     retryDelay: 1000
@@ -401,15 +350,15 @@ function URLMappings() {
   // const { actions } = useApp(); // Commented out for mock implementation
   const { isDarkMode } = useTheme();
 
-  // Component state management
-  const [mappings, setMappings] = useState<URLMappingDisplay[]>(MOCK_URL_MAPPINGS);
-  const [urlConfigs, setUrlConfigs] = useState<URLConfig[]>(MOCK_URL_CONFIGS);
-  const [extractors, setExtractors] = useState<Extractor[]>(MOCK_EXTRACTORS);
+  // Component State
+  const [mappings, setMappings] = useState<URLMappingDisplay[]>([]);
+  const [urlConfigs, setUrlConfigs] = useState<URLConfig[]>([]);
+  const [extractors, setExtractors] = useState<Extractor[]>([]);
   const [formData, setFormData] = useState<URLMappingFormData>(DEFAULT_FORM_DATA);
   const [editingMapping, setEditingMapping] = useState<URLMappingDisplay | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -423,32 +372,79 @@ function URLMappings() {
   }, []);
 
   /**
+   * Debug: Log state changes
+   */
+  useEffect(() => {
+    console.log('=== State Updated ===');
+    console.log('urlConfigs state:', urlConfigs.length, 'items:', urlConfigs);
+    console.log('extractors state:', extractors.length, 'items:', extractors);
+    console.log('extractors details:', extractors.map(e => ({ id: e.id, name: e.name, isActive: e.isActive })));
+    console.log('Active URL configs for dropdown:', urlConfigs.filter(config => config.isActive).length);
+    console.log('formData.extractorIds:', formData.extractorIds);
+  }, [urlConfigs, extractors, formData.extractorIds]);
+
+  /**
    * Initialize Data Function
    * 
-   * Simulates loading data from backend services.
-   * Sets up mock data for development and testing.
+   * Loads data from backend services using the API client.
+   * Fetches URL configurations, extractors, and URL mappings.
    */
   const initializeData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('=== URLMappings Component Debug ===');
+      console.log('Attempting to fetch data from backend APIs...');
       
-      // In a real implementation, these would be API calls:
-      // const urlConfigsResponse = await fetch('/api/url-configurations/');
-      // const extractorsResponse = await fetch('/api/extractors/');
-      // const mappingsResponse = await fetch('/api/url-mappings/');
+      // Fetch all data from backend APIs
+      const data = await urlMappingsService.getAllDataForUI();
       
-      // For now, we use mock data
-      setUrlConfigs(MOCK_URL_CONFIGS);
-      setExtractors(MOCK_EXTRACTORS.filter(e => e.is_active));
-      setMappings(MOCK_URL_MAPPINGS);
+      console.log('API Response:', data);
+      console.log('URL Configurations count:', data.urlConfigurations?.length || 0);
+      console.log('URL Configurations sample:', data.urlConfigurations?.slice(0, 2));
+      console.log('Extractors count:', data.extractors?.length || 0);
+      console.log('Extractors sample:', data.extractors?.slice(0, 2));
+      console.log('URL Mappings count:', data.urlMappings?.length || 0);
+      
+      // Check if we got empty data and fall back to mock data
+      if (data.urlConfigurations.length === 0 && data.extractors.length === 0) {
+        console.warn('API returned empty data, falling back to mock data for development');
+        console.log('Setting mock URL configs:', MOCK_URL_CONFIGS.length, 'items');
+        console.log('Setting mock extractors:', MOCK_EXTRACTORS.filter(e => e.isActive).length, 'active items');
+        console.log('Mock extractors details:', MOCK_EXTRACTORS.map(e => ({ id: e.id, name: e.name, isActive: e.isActive })));
+        setUrlConfigs(MOCK_URL_CONFIGS);
+        setExtractors(MOCK_EXTRACTORS.filter(e => e.isActive));
+        setMappings(MOCK_URL_MAPPINGS);
+        setError('Using mock data - backend API returned empty results');
+      } else {
+        console.log('Using API data - URL configs:', data.urlConfigurations.length, 'extractors:', data.extractors.length);
+        console.log('Active extractors before filtering:', data.extractors.filter(e => e.isActive).length);
+        console.log('All extractors isActive status:', data.extractors.map(e => ({ id: e.id, name: e.name, isActive: e.isActive })));
+        
+        // Data loaded successfully from API
+        
+        setUrlConfigs(data.urlConfigurations);
+        setExtractors(data.extractors.filter(e => e.isActive));
+        setMappings(data.urlMappings);
+      }
       
     } catch (err) {
-      setError('Failed to load data. Please try again.');
       console.error('Error initializing data:', err);
+      console.warn('API failed, falling back to mock data for development');
+      
+      // Fall back to mock data when API fails
+      console.log('Setting fallback mock data - URL configs:', MOCK_URL_CONFIGS.length, 'extractors:', MOCK_EXTRACTORS.filter(e => e.isActive).length);
+      console.log('Fallback mock extractors details:', MOCK_EXTRACTORS.map(e => ({ id: e.id, name: e.name, isActive: e.isActive })));
+      setUrlConfigs(MOCK_URL_CONFIGS);
+      setExtractors(MOCK_EXTRACTORS.filter(e => e.isActive));
+      setMappings(MOCK_URL_MAPPINGS);
+      
+      if (err instanceof ApiClientError) {
+        setError(`API Error (using mock data): ${err.message}`);
+      } else {
+        setError('API connection failed (using mock data). Please check backend service.');
+      }
     } finally {
       setLoading(false);
     }
@@ -469,80 +465,106 @@ function URLMappings() {
       setLoading(true);
       setError(null);
       
-      // Validate required fields
-      if (!formData.name.trim()) {
-        throw new Error('Mapping name is required');
-      }
+      console.log('🔍 Form submission started:');
+      console.log('  - Current formData:', formData);
+      console.log('  - configurationId:', formData.configurationId);
+      console.log('  - editingMapping:', editingMapping);
       
-      if (!formData.url_config_id) {
+      // Validate required fields
+      if (!formData.configurationId) {
+        console.error('❌ No configurationId in form data');
         throw new Error('URL configuration is required');
       }
       
-      if (!formData.extractor_ids || formData.extractor_ids.length === 0) {
-        throw new Error('At least one extractor must be selected');
+      if (formData.extractorIds.length === 0) {
+        console.error('❌ No extractors selected');
+        console.error('Available extractors:', extractors.length);
+        console.error('Extractors list:', extractors.map(e => ({ id: e.id, name: e.name })));
+        throw new Error('At least one extractor must be selected. Please check the extractors section and select at least one.');
       }
       
       // Validate JSON fields
       try {
-        JSON.parse(formData.metadata || '{}');
-        JSON.parse(formData.validation_rules || '{}');
-        JSON.parse(formData.crawler_settings || '{}');
+        if (formData.validationRules && typeof formData.validationRules === 'string') {
+          JSON.parse(formData.validationRules);
+        }
+        if (formData.crawlerSettings && typeof formData.crawlerSettings === 'string') {
+          JSON.parse(formData.crawlerSettings);
+        }
       } catch {
         throw new Error('Invalid JSON in configuration fields');
       }
       
-      // Find the associated URL configuration
-      const urlConfig = urlConfigs.find(config => config.id === formData.url_config_id);
-      if (!urlConfig) {
-        throw new Error('Selected URL configuration not found');
-      }
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
       if (editingMapping) {
         // Update existing mapping
-        const updatedMapping: URLMappingDisplay = {
-          ...editingMapping,
-          ...formData,
-          url: urlConfig.url,
-          config: JSON.parse(formData.crawler_settings || '{}'),
-          updated_at: new Date().toISOString()
-        };
+        const updateData = urlMappingsService.transformURLMappingToBackend(formData);
         
-        setMappings(prev => prev.map(mapping => 
-          mapping.id === editingMapping.id ? updatedMapping : mapping
+        console.log('🔍 Backend transformation for UPDATE:');
+        console.log('  - Original formData:', formData);
+        console.log('  - Transformed updateData:', updateData);
+        console.log('  - url_config_id in update data:', updateData.url_config_id);
+        
+        // LOG THE ACTUAL HTTP REQUEST DETAILS
+        console.log('🚀 ACTUAL HTTP REQUEST BEING SENT:');
+        console.log('  - Method: PUT');
+        console.log('  - Endpoint: /api/url-mappings/' + editingMapping.id);
+        console.log('  - Mapping ID being updated:', editingMapping.id);
+        console.log('  - Complete updateData object:', JSON.stringify(updateData, null, 2));
+        console.log('  - All fields in updateData:');
+        Object.keys(updateData).forEach(key => {
+          const value = (updateData as any)[key];
+          console.log(`    - ${key}: ${JSON.stringify(value)} (${typeof value})`);
+        });
+        
+        const updatedMapping = await urlMappingsService.updateURLMapping(editingMapping.id, updateData);
+        
+        console.log('🔍 Backend response for UPDATE:', updatedMapping);
+        
+        // Transform the backend response to frontend format
+        const transformedMapping = await urlMappingsService.transformURLMappingToFrontend(updatedMapping);
+        
+        // Update the local state with the updated mapping
+        setMappings(prev => prev.map(m => 
+          m.id === editingMapping.id ? transformedMapping : m
         ));
         
-        // In a real implementation:
-        // await actions.updateMapping(editingMapping.id, formData);
+        // Close the form after successful update
+        resetForm();
+        setShowForm(false);
+        setEditingMapping(null);
+        console.log('🔍 Form closed after successful update');
         
       } else {
         // Create new mapping
-        const newMapping: URLMappingDisplay = {
-          id: Math.max(...mappings.map(m => m.id), 0) + 1,
-          ...formData,
-          url: urlConfig.url,
-          config: JSON.parse(formData.crawler_settings || '{}'),
-          extractionCount: 0,
-          successRate: 0,
-          lastExtracted: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
+        const createData = urlMappingsService.transformURLMappingToBackend(formData);
         
-        setMappings(prev => [...prev, newMapping]);
+        console.log('🔍 Backend transformation for CREATE:');
+        console.log('  - Original formData:', formData);
+        console.log('  - Transformed createData:', createData);
+        console.log('  - url_config_id in create data:', createData.url_config_id);
         
-        // In a real implementation:
-        // await actions.createMapping(formData);
+        const newMapping = await urlMappingsService.createURLMapping(createData);
+        
+        console.log('🔍 Backend response for CREATE:', newMapping);
+        
+        const transformedMapping = await urlMappingsService.transformURLMappingToFrontend(newMapping);
+        
+        setMappings(prev => [...prev, transformedMapping]);
+        
+        // Reset form and close only for new mappings
+        resetForm();
+        setShowForm(false);
       }
       
-      // Reset form and close
-      resetForm();
-      setShowForm(false);
-      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      console.error('Error submitting form:', err);
+      if (err instanceof ApiClientError) {
+        setError(`Failed to save mapping: ${err.message}`);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An error occurred while saving the mapping');
+      }
     } finally {
       setLoading(false);
     }
@@ -561,14 +583,15 @@ function URLMappings() {
       // Populate form with mapping data
       setFormData({
         name: mapping.name,
-        url_config_id: mapping.url_config_id,
-        extractor_ids: mapping.extractor_ids || [],
-        rate_limit: mapping.rate_limit,
+        configurationId: mapping.configurationId,
+        extractorId: mapping.extractorId, // Legacy single extractor
+        extractorIds: mapping.extractorIds || (mapping.extractorId ? [mapping.extractorId] : []), // Multiple extractors with backward compatibility
+        rateLimit: mapping.rateLimit,
         priority: mapping.priority,
-        is_active: mapping.is_active,
-        metadata: mapping.metadata || '{}',
-        validation_rules: mapping.validation_rules || '{}',
-        crawler_settings: mapping.crawler_settings || JSON.stringify({
+        isActive: mapping.isActive,
+        metadata: JSON.stringify(mapping.metadata || {}),
+        validationRules: JSON.stringify(mapping.validationRules || {}),
+        crawlerSettings: JSON.stringify(mapping.crawlerSettings || {
           timeout: 30000,
           retryAttempts: 3,
           retryDelay: 1000
@@ -596,25 +619,28 @@ function URLMappings() {
    * 
    * @param mappingId - ID of the mapping to delete
    */
-  const handleDelete = async (mappingId: number) => {
+  const handleDelete = async (mappingId: string) => {
     if (!window.confirm('Are you sure you want to delete this URL mapping?')) {
       return;
     }
     
     try {
       setLoading(true);
+      setError(null);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Delete mapping via API
+      await urlMappingsService.deleteURLMapping(mappingId);
       
+      // Remove from local state
       setMappings(prev => prev.filter(mapping => mapping.id !== mappingId));
       
-      // In a real implementation:
-      // await actions.deleteMapping(mappingId);
-      
     } catch (err) {
-      setError('Failed to delete mapping');
       console.error('Error deleting mapping:', err);
+      if (err instanceof ApiClientError) {
+        setError(`Failed to delete mapping: ${err.message}`);
+      } else {
+        setError('Failed to delete mapping. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -627,27 +653,29 @@ function URLMappings() {
    * 
    * @param mappingId - ID of the mapping to toggle
    */
-  const toggleActive = async (mappingId: number) => {
+  const toggleActive = async (mappingId: string) => {
     try {
       const mapping = mappings.find(m => m.id === mappingId);
       if (!mapping) return;
       
-      const updatedMapping = {
-        ...mapping,
-        is_active: !mapping.is_active,
-        updated_at: new Date().toISOString()
-      };
+      // Update mapping via API
+      const updatedMapping = await urlMappingsService.updateURLMapping(mappingId, {
+        is_active: !mapping.isActive
+      });
+      
+      const transformedMapping = await urlMappingsService.transformURLMappingToFrontend(updatedMapping);
       
       setMappings(prev => prev.map(m => 
-        m.id === mappingId ? updatedMapping : m
+        m.id === mappingId ? transformedMapping : m
       ));
       
-      // In a real implementation:
-      // await actions.updateMapping(mappingId, { is_active: !mapping.is_active });
-      
     } catch (err) {
-      setError('Failed to update mapping status');
       console.error('Error toggling mapping status:', err);
+      if (err instanceof ApiClientError) {
+        setError(`Failed to update mapping status: ${err.message}`);
+      } else {
+        setError('Failed to update mapping status. Please try again.');
+      }
     }
   };
 
@@ -659,31 +687,78 @@ function URLMappings() {
    * @param mappingId - ID of the mapping to adjust
    * @param direction - Direction to adjust priority ('up' or 'down')
    */
-  const handlePriorityChange = async (mappingId: number, direction: 'up' | 'down') => {
+  const handlePriorityChange = async (mappingId: string, direction: 'up' | 'down') => {
     try {
       const mapping = mappings.find(m => m.id === mappingId);
-      if (!mapping) return;
+      if (!mapping) {
+        console.error('❌ Mapping not found for ID:', mappingId);
+        return;
+      }
+      
+      console.log('🔍 Priority Change Debug - Input:');
+      console.log('  - Mapping ID:', mappingId);
+      console.log('  - Current mapping:', mapping);
+      console.log('  - Current priority:', mapping.priority);
+      console.log('  - Direction:', direction);
       
       const newPriority = direction === 'up' 
-        ? Math.min(mapping.priority + 1, 100)
+        ? Math.min(mapping.priority + 1, 10)
         : Math.max(mapping.priority - 1, 1);
       
-      const updatedMapping = {
-        ...mapping,
-        priority: newPriority,
-        updated_at: new Date().toISOString()
+      console.log('  - New priority:', newPriority);
+      
+      // Prepare update data
+      const updateData = { priority: newPriority };
+      console.log('🔍 Sending update data to backend:', updateData);
+      
+      // Update the mapping priority via API
+      const updatedMappingResponse = await urlMappingsService.updateURLMapping(mappingId, updateData);
+      
+      console.log('🔍 Backend response:', updatedMappingResponse);
+      console.log('  - Response priority:', updatedMappingResponse.priority);
+      
+      // Transform backend response to frontend format
+      const updatedMapping = await urlMappingsService.transformURLMappingToFrontend(updatedMappingResponse);
+      
+      console.log('🔍 Transformed mapping:', updatedMapping);
+      console.log('  - Transformed priority:', updatedMapping.priority);
+      console.log('  - Transformed URL:', updatedMapping.url);
+      
+      // Preserve existing fields that might be missing from backend response
+      const preservedMapping = {
+        ...updatedMapping,
+        // Preserve URL and other important fields from current mapping if missing in response
+        url: updatedMapping.url || mapping.url,
+        name: updatedMapping.name || mapping.name,
+        configuration: updatedMapping.configuration || mapping.configuration
       };
       
-      setMappings(prev => prev.map(m => 
-        m.id === mappingId ? updatedMapping : m
-      ));
+      console.log('🔍 Preserved mapping with URL:', preservedMapping);
+      console.log('  - Preserved URL:', preservedMapping.url);
       
-      // In a real implementation:
-      // await actions.updateMapping(mappingId, { priority: newPriority });
+      // Update local state with the preserved mapping
+      setMappings(prev => {
+        const newMappings = prev.map(m => 
+          m.id === mappingId ? preservedMapping : m
+        );
+        console.log('🔍 Updated mappings state:', newMappings.find(m => m.id === mappingId));
+        return newMappings;
+      });
+      
+      console.log('✅ Priority update completed successfully');
       
     } catch (err) {
-      setError('Failed to update mapping priority');
-      console.error('Error updating priority:', err);
+      console.error('❌ Error updating priority:', err);
+      console.error('❌ Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        response: (err as any)?.response
+      });
+      if (err instanceof ApiClientError) {
+        setError(`Failed to update mapping priority: ${err.message}`);
+      } else {
+        setError('Failed to update mapping priority. Please try again.');
+      }
     }
   };
 
@@ -772,7 +847,7 @@ function URLMappings() {
               isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
             }`}>
               <div className={`text-2xl font-bold text-green-600`}>
-                {mappings.filter(m => m.is_active).length}
+                {mappings.filter(m => m.isActive).length}
               </div>
               <div className={`text-sm ${
                 isDarkMode ? 'text-gray-400' : 'text-gray-600'
@@ -876,9 +951,21 @@ function URLMappings() {
                     URL Configuration *
                   </label>
                   <select
+                    value={formData.configurationId || ''}
+                    onChange={(e) => {
+                      const newConfigId = e.target.value || null;
+                      console.log('🔍 URL Configuration dropdown changed:');
+                      console.log('  - Previous configurationId:', formData.configurationId);
+                      console.log('  - New configurationId:', newConfigId);
+                      console.log('  - Selected option value:', e.target.value);
+                      
+                      setFormData(prevFormData => {
+                        const updatedFormData = { ...prevFormData, configurationId: newConfigId };
+                        console.log('  - Form data after update:', updatedFormData);
+                        return updatedFormData;
+                      });
+                    }}
                     required
-                    value={formData.url_config_id || ''}
-                    onChange={(e) => setFormData({ ...formData, url_config_id: parseInt(e.target.value) || null })}
                     className={`w-full px-3 py-2 rounded-lg text-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
@@ -886,7 +973,7 @@ function URLMappings() {
                     }`}
                   >
                     <option value="">Select a URL configuration</option>
-                    {urlConfigs.filter(config => config.is_active).map(config => (
+                    {urlConfigs.filter(config => config.isActive).map(config => (
                       <option key={config.id} value={config.id}>
                         {config.name} - {config.url}
                       </option>
@@ -899,64 +986,102 @@ function URLMappings() {
                   <label className={`block text-sm font-medium mb-2 ${
                     isDarkMode ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    Extractors *
+                    Extractors * {formData.extractorIds.length > 0 && (
+                      <span className="text-green-600 text-xs ml-2">({formData.extractorIds.length} selected)</span>
+                    )}
                   </label>
                   <div className={`border rounded-lg p-3 max-h-48 overflow-y-auto ${
                     isDarkMode 
                       ? 'bg-gray-700 border-gray-600' 
                       : 'bg-white border-gray-300'
+                  } ${
+                    formData.extractorIds.length === 0 ? 'border-red-300' : ''
                   }`}>
                     {extractors.length === 0 ? (
-                      <p className={`text-sm ${
-                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      <div className={`text-sm p-2 rounded ${
+                        isDarkMode ? 'text-red-400 bg-red-900/20' : 'text-red-600 bg-red-50'
                       }`}>
-                        No extractors available
-                      </p>
+                        ⚠️ No extractors available. Please check the backend connection or contact support.
+                      </div>
                     ) : (
-                      extractors.map(extractor => (
-                        <label key={extractor.id} className={`flex items-center space-x-3 p-2 rounded hover:bg-opacity-50 cursor-pointer ${
-                          isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={formData.extractor_ids.includes(extractor.id)}
-                            onChange={(e) => {
-                              const updatedIds = e.target.checked
-                                ? [...formData.extractor_ids, extractor.id]
-                                : formData.extractor_ids.filter(id => id !== extractor.id);
-                              setFormData({ ...formData, extractor_ids: updatedIds });
-                            }}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                          />
-                          <div className="flex-1">
-                            <div className={`text-sm font-medium ${
-                              isDarkMode ? 'text-white' : 'text-gray-900'
-                            }`}>
-                              {extractor.name}
-                            </div>
-                            <div className={`text-xs ${
+                      <>
+                        {formData.extractorIds.length === 0 && (
+                          <div className={`text-xs mb-2 p-2 rounded ${
+                            isDarkMode ? 'text-yellow-400 bg-yellow-900/20' : 'text-yellow-700 bg-yellow-50'
+                          }`}>
+                            ⚠️ Please select at least one extractor to continue
+                          </div>
+                        )}
+                        {extractors.map(extractor => (
+                      <label key={extractor.id} className={`flex items-center space-x-3 p-2 rounded hover:bg-opacity-50 cursor-pointer ${
+                        isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={formData.extractorIds.includes(extractor.id)}
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            console.log('🔍 Extractor checkbox changed:');
+                            console.log('  - Extractor ID:', extractor.id);
+                            console.log('  - Extractor Name:', extractor.name);
+                            console.log('  - Is Checked:', isChecked);
+                            console.log('  - Previous extractorIds:', formData.extractorIds);
+                            
+                            setFormData(prevFormData => {
+                              let newExtractorIds: string[];
+                              
+                              if (isChecked) {
+                                // Add extractor to selection
+                                newExtractorIds = [...prevFormData.extractorIds, extractor.id];
+                              } else {
+                                // Remove extractor from selection
+                                newExtractorIds = prevFormData.extractorIds.filter(id => id !== extractor.id);
+                              }
+                              
+                              const updatedFormData = {
+                                ...prevFormData, 
+                                extractorIds: newExtractorIds,
+                                extractorId: newExtractorIds.length > 0 ? newExtractorIds[0] : null // Use first selected for legacy
+                              };
+                              
+                              console.log('  - New extractorIds:', newExtractorIds);
+                              console.log('  - Updated form data:', updatedFormData);
+                              
+                              return updatedFormData;
+                            });
+                          }}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <div className="flex-1">
+                          <div className={`text-sm font-medium ${
+                            isDarkMode ? 'text-white' : 'text-gray-900'
+                          }`}>
+                            {extractor.name}
+                          </div>
+                          <div className={`text-xs ${
+                            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                          }`}>
+                            {extractor.type} • {extractor.isActive ? 'Active' : 'Inactive'}
+                          </div>
+                          {extractor.description && (
+                            <div className={`text-xs mt-1 ${
                               isDarkMode ? 'text-gray-400' : 'text-gray-500'
                             }`}>
-                              {extractor.type} • {extractor.is_active ? 'Active' : 'Inactive'}
+                              {extractor.description}
                             </div>
-                            {extractor.description && (
-                              <div className={`text-xs mt-1 ${
-                                isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                              }`}>
-                                {extractor.description}
-                              </div>
-                            )}
-                          </div>
-                        </label>
-                      ))
-                    )}
+                          )}
+                        </div>
+                      </label>
+                        ))}
+                       </>
+                     )}
                   </div>
-                  {formData.extractor_ids.length > 0 && (
+                  {formData.extractorIds.length > 0 && (
                     <div className="mt-2">
                       <p className={`text-xs ${
                         isDarkMode ? 'text-gray-400' : 'text-gray-500'
                       }`}>
-                        {formData.extractor_ids.length} extractor{formData.extractor_ids.length !== 1 ? 's' : ''} selected
+                        {formData.extractorIds.length} extractor{formData.extractorIds.length !== 1 ? 's' : ''} selected
                       </p>
                     </div>
                   )}
@@ -994,8 +1119,8 @@ function URLMappings() {
                     type="number"
                     min="1"
                     max="1000"
-                    value={formData.rate_limit}
-                    onChange={(e) => setFormData({ ...formData, rate_limit: parseInt(e.target.value) || 60 })}
+                    value={formData.rateLimit}
+                    onChange={(e) => setFormData({ ...formData, rateLimit: parseInt(e.target.value) || 60 })}
                     className={`w-full px-3 py-2 rounded-lg text-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
@@ -1079,8 +1204,8 @@ function URLMappings() {
                 <input
                   type="checkbox"
                   id="isActive"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                   className="w-4 h-4 accent-blue-500 rounded"
                 />
                 <label htmlFor="isActive" className={`ml-2 text-sm ${
@@ -1134,7 +1259,7 @@ function URLMappings() {
                           max="300000"
                           value={(() => {
                             try {
-                              const settings = JSON.parse(formData.crawler_settings || '{}');
+                              const settings = JSON.parse(formData.crawlerSettings || '{}');
                               return settings.timeout || 30000;
                             } catch {
                               return 30000;
@@ -1142,11 +1267,11 @@ function URLMappings() {
                           })()}
                           onChange={(e) => {
                             try {
-                              const settings = JSON.parse(formData.crawler_settings || '{}');
+                              const settings = JSON.parse(formData.crawlerSettings || '{}');
                               settings.timeout = parseInt(e.target.value) || 30000;
-                              setFormData({ ...formData, crawler_settings: JSON.stringify(settings) });
+                              setFormData({ ...formData, crawlerSettings: JSON.stringify(settings) });
                             } catch {
-                              setFormData({ ...formData, crawler_settings: JSON.stringify({ timeout: parseInt(e.target.value) || 30000 }) });
+                              setFormData({ ...formData, crawlerSettings: JSON.stringify({ timeout: parseInt(e.target.value) || 30000 }) });
                             }
                           }}
                           className={`w-full px-3 py-2 rounded-lg text-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
@@ -1170,7 +1295,7 @@ function URLMappings() {
                           max="10"
                           value={(() => {
                             try {
-                              const settings = JSON.parse(formData.crawler_settings || '{}');
+                              const settings = JSON.parse(formData.crawlerSettings || '{}');
                               return settings.retryAttempts || 3;
                             } catch {
                               return 3;
@@ -1178,11 +1303,11 @@ function URLMappings() {
                           })()}
                           onChange={(e) => {
                             try {
-                              const settings = JSON.parse(formData.crawler_settings || '{}');
+                              const settings = JSON.parse(formData.crawlerSettings || '{}');
                               settings.retryAttempts = parseInt(e.target.value) || 3;
-                              setFormData({ ...formData, crawler_settings: JSON.stringify(settings) });
+                              setFormData({ ...formData, crawlerSettings: JSON.stringify(settings) });
                             } catch {
-                              setFormData({ ...formData, crawler_settings: JSON.stringify({ retryAttempts: parseInt(e.target.value) || 3 }) });
+                              setFormData({ ...formData, crawlerSettings: JSON.stringify({ retryAttempts: parseInt(e.target.value) || 3 }) });
                             }
                           }}
                           className={`w-full px-3 py-2 rounded-lg text-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
@@ -1206,7 +1331,7 @@ function URLMappings() {
                           max="60000"
                           value={(() => {
                             try {
-                              const settings = JSON.parse(formData.crawler_settings || '{}');
+                              const settings = JSON.parse(formData.crawlerSettings || '{}');
                               return settings.retryDelay || 1000;
                             } catch {
                               return 1000;
@@ -1214,11 +1339,11 @@ function URLMappings() {
                           })()}
                           onChange={(e) => {
                             try {
-                              const settings = JSON.parse(formData.crawler_settings || '{}');
+                              const settings = JSON.parse(formData.crawlerSettings || '{}');
                               settings.retryDelay = parseInt(e.target.value) || 1000;
-                              setFormData({ ...formData, crawler_settings: JSON.stringify(settings) });
+                              setFormData({ ...formData, crawlerSettings: JSON.stringify(settings) });
                             } catch {
-                              setFormData({ ...formData, crawler_settings: JSON.stringify({ retryDelay: parseInt(e.target.value) || 1000 }) });
+                              setFormData({ ...formData, crawlerSettings: JSON.stringify({ retryDelay: parseInt(e.target.value) || 1000 }) });
                             }
                           }}
                           className={`w-full px-3 py-2 rounded-lg text-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
@@ -1242,7 +1367,7 @@ function URLMappings() {
                           type="text"
                           value={(() => {
                             try {
-                              const settings = JSON.parse(formData.crawler_settings || '{}');
+                              const settings = JSON.parse(formData.crawlerSettings || '{}');
                               return settings.userAgent || '';
                             } catch {
                               return '';
@@ -1250,16 +1375,16 @@ function URLMappings() {
                           })()}
                           onChange={(e) => {
                             try {
-                              const settings = JSON.parse(formData.crawler_settings || '{}');
+                              const settings = JSON.parse(formData.crawlerSettings || '{}');
                               if (e.target.value) {
                                 settings.userAgent = e.target.value;
                               } else {
                                 delete settings.userAgent;
                               }
-                              setFormData({ ...formData, crawler_settings: JSON.stringify(settings) });
+                              setFormData({ ...formData, crawlerSettings: JSON.stringify(settings) });
                             } catch {
                               const newSettings = e.target.value ? { userAgent: e.target.value } : {};
-                              setFormData({ ...formData, crawler_settings: JSON.stringify(newSettings) });
+                              setFormData({ ...formData, crawlerSettings: JSON.stringify(newSettings) });
                             }
                           }}
                           placeholder="Custom Bot/1.0"
@@ -1283,7 +1408,7 @@ function URLMappings() {
                           max="60000"
                           value={(() => {
                             try {
-                              const settings = JSON.parse(formData.crawler_settings || '{}');
+                              const settings = JSON.parse(formData.crawlerSettings || '{}');
                               return settings.delay || '';
                             } catch {
                               return '';
@@ -1291,16 +1416,16 @@ function URLMappings() {
                           })()}
                           onChange={(e) => {
                             try {
-                              const settings = JSON.parse(formData.crawler_settings || '{}');
+                              const settings = JSON.parse(formData.crawlerSettings || '{}');
                               if (e.target.value) {
                                 settings.delay = parseInt(e.target.value);
                               } else {
                                 delete settings.delay;
                               }
-                              setFormData({ ...formData, crawler_settings: JSON.stringify(settings) });
+                              setFormData({ ...formData, crawlerSettings: JSON.stringify(settings) });
                             } catch {
                               const newSettings = e.target.value ? { delay: parseInt(e.target.value) } : {};
-                              setFormData({ ...formData, crawler_settings: JSON.stringify(newSettings) });
+                              setFormData({ ...formData, crawlerSettings: JSON.stringify(newSettings) });
                             }
                           }}
                           placeholder="1000"
@@ -1330,7 +1455,7 @@ function URLMappings() {
                           id="validation-required"
                           checked={(() => {
                             try {
-                              const rules = JSON.parse(formData.validation_rules || '{}');
+                              const rules = JSON.parse(formData.validationRules || '{}');
                               return rules.required || false;
                             } catch {
                               return false;
@@ -1338,11 +1463,11 @@ function URLMappings() {
                           })()}
                           onChange={(e) => {
                             try {
-                              const rules = JSON.parse(formData.validation_rules || '{}');
+                              const rules = JSON.parse(formData.validationRules || '{}');
                               rules.required = e.target.checked;
-                              setFormData({ ...formData, validation_rules: JSON.stringify(rules) });
+                              setFormData({ ...formData, validationRules: JSON.stringify(rules) });
                             } catch {
-                              setFormData({ ...formData, validation_rules: JSON.stringify({ required: e.target.checked }) });
+                              setFormData({ ...formData, validationRules: JSON.stringify({ required: e.target.checked }) });
                             }
                           }}
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -1366,7 +1491,7 @@ function URLMappings() {
                           min="0"
                           value={(() => {
                             try {
-                              const rules = JSON.parse(formData.validation_rules || '{}');
+                              const rules = JSON.parse(formData.validationRules || '{}');
                               return rules.minLength || '';
                             } catch {
                               return '';
@@ -1374,16 +1499,16 @@ function URLMappings() {
                           })()}
                           onChange={(e) => {
                             try {
-                              const rules = JSON.parse(formData.validation_rules || '{}');
+                              const rules = JSON.parse(formData.validationRules || '{}');
                               if (e.target.value) {
                                 rules.minLength = parseInt(e.target.value);
                               } else {
                                 delete rules.minLength;
                               }
-                              setFormData({ ...formData, validation_rules: JSON.stringify(rules) });
+                              setFormData({ ...formData, validationRules: JSON.stringify(rules) });
                             } catch {
                               const newRules = e.target.value ? { minLength: parseInt(e.target.value) } : {};
-                              setFormData({ ...formData, validation_rules: JSON.stringify(newRules) });
+                              setFormData({ ...formData, validationRules: JSON.stringify(newRules) });
                             }
                           }}
                           placeholder="Optional"
@@ -1407,7 +1532,7 @@ function URLMappings() {
                           min="0"
                           value={(() => {
                             try {
-                              const rules = JSON.parse(formData.validation_rules || '{}');
+                              const rules = JSON.parse(formData.validationRules || '{}');
                               return rules.maxLength || '';
                             } catch {
                               return '';
@@ -1415,16 +1540,16 @@ function URLMappings() {
                           })()}
                           onChange={(e) => {
                             try {
-                              const rules = JSON.parse(formData.validation_rules || '{}');
+                              const rules = JSON.parse(formData.validationRules || '{}');
                               if (e.target.value) {
                                 rules.maxLength = parseInt(e.target.value);
                               } else {
                                 delete rules.maxLength;
                               }
-                              setFormData({ ...formData, validation_rules: JSON.stringify(rules) });
+                              setFormData({ ...formData, validationRules: JSON.stringify(rules) });
                             } catch {
                               const newRules = e.target.value ? { maxLength: parseInt(e.target.value) } : {};
-                              setFormData({ ...formData, validation_rules: JSON.stringify(newRules) });
+                              setFormData({ ...formData, validationRules: JSON.stringify(newRules) });
                             }
                           }}
                           placeholder="Optional"
@@ -1510,42 +1635,47 @@ function URLMappings() {
            </div>
 
            <div className="overflow-x-auto">
-             <table className="w-full border-collapse">
+             <table className="min-w-full border-collapse table-auto">
                <thead className={`${
                  isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
                }`}>
                  <tr>
-                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider w-24 ${
                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
                    }`}>
                      Priority
                    </th>
-                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider min-w-48 ${
+                     isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                   }`}>
+                     URL
+                   </th>
+                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider min-w-40 ${
                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
                    }`}>
                      Mapping Details
                    </th>
-                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider min-w-48 ${
                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
                    }`}>
                      Extractors
                    </th>
-                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider w-32 ${
                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
                    }`}>
                      Status
                    </th>
-                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider w-36 ${
                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
                    }`}>
                      Performance
                    </th>
-                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider w-40 ${
                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
                    }`}>
                      Last Activity
                    </th>
-                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider w-32 ${
                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
                    }`}>
                      Actions
@@ -1558,7 +1688,15 @@ function URLMappings() {
                    : 'bg-white divide-gray-200'
                }`}>
                  {mappings.map((mapping) => {
-                   const mappingExtractors = extractors.filter(e => mapping.extractor_ids.includes(e.id));
+                   // Handle both single extractorId (legacy) and multiple extractorIds
+                   const extractorIdsList = mapping.extractorIds && mapping.extractorIds.length > 0 
+                     ? mapping.extractorIds 
+                     : mapping.extractorId ? [mapping.extractorId] : [];
+                   const mappingExtractors = extractors.filter(e => extractorIdsList.includes(e.id));
+                   
+                   // Get the URL from the URL configuration
+                   const urlConfig = urlConfigs.find(config => config.id === mapping.configurationId);
+                   const mappingUrl = urlConfig?.url || mapping.url || 'No URL configured';
                    return (
                      <tr key={mapping.id} className={`hover:${
                        isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
@@ -1600,23 +1738,28 @@ function URLMappings() {
                          </div>
                        </td>
 
-                       {/* Mapping Details Column */}
+                       {/* URL Column */}
                        <td className="px-6 py-4">
-                         <div className="flex items-start gap-3">
-                           <LinkIcon className={`mt-1 h-5 w-5 ${
+                         <div className="flex items-center gap-2">
+                           <LinkIcon className={`h-4 w-4 ${
                              isDarkMode ? 'text-gray-400' : 'text-gray-500'
                            }`} />
-                           <div>
-                             <div className={`text-sm font-medium ${
-                               isDarkMode ? 'text-white' : 'text-gray-900'
-                             }`}>
-                               {mapping.name}
-                             </div>
-                             <div className={`text-xs mt-1 ${
-                               isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                             }`}>
-                               {mapping.url}
-                             </div>
+                           <div className={`text-sm font-mono ${
+                             isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                           }`}>
+                             {mappingUrl}
+                           </div>
+                         </div>
+                       </td>
+
+                       {/* Mapping Details Column */}
+                       <td className="px-6 py-4">
+                         <div>
+                           <div className={`text-sm font-medium ${
+                             isDarkMode ? 'text-white' : 'text-gray-900'
+                           }`}>
+                             {mapping.name}
+                           </div>
                              {mapping.tags && mapping.tags.length > 0 && (
                                <div className="flex flex-wrap gap-1 mt-2">
                                  {mapping.tags.slice(0, 3).map((tag, index) => (
@@ -1640,37 +1783,50 @@ function URLMappings() {
                                </div>
                              )}
                            </div>
-                         </div>
                        </td>
 
                        {/* Extractor Column */}
                        <td className="px-6 py-4">
                          {mappingExtractors.length > 0 ? (
-                           <div className="space-y-1">
-                             {mappingExtractors.slice(0, 2).map((extractor, index) => (
-                               <div key={extractor.id}>
-                                 <div className={`text-sm font-medium ${
-                                   isDarkMode ? 'text-white' : 'text-gray-900'
-                                 }`}>
-                                   {extractor.name}
-                                 </div>
-                                 <div className={`text-xs ${
-                                   isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                                 }`}>
-                                   {extractor.type} • {extractor.is_active ? 'Active' : 'Inactive'}
-                                 </div>
-                               </div>
+                           <div className="flex flex-wrap gap-1">
+                             {mappingExtractors.slice(0, 3).map((extractor) => (
+                               <span
+                                 key={extractor.id}
+                                 className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
+                                   extractor.isActive
+                                     ? isDarkMode
+                                       ? 'bg-green-900 text-green-300 border border-green-700'
+                                       : 'bg-green-100 text-green-800 border border-green-200'
+                                     : isDarkMode
+                                       ? 'bg-gray-700 text-gray-300 border border-gray-600'
+                                       : 'bg-gray-100 text-gray-600 border border-gray-300'
+                                 }`}
+                                 title={`${extractor.name} (${extractor.type}) - ${extractor.isActive ? 'Active' : 'Inactive'}`}
+                               >
+                                 <span className={`w-2 h-2 rounded-full ${
+                                   extractor.isActive
+                                     ? 'bg-green-500'
+                                     : 'bg-gray-400'
+                                 }`} />
+                                 {extractor.name}
+                               </span>
                              ))}
-                             {mappingExtractors.length > 2 && (
-                               <div className={`text-xs ${
-                                 isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                             {mappingExtractors.length > 3 && (
+                               <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                                 isDarkMode
+                                   ? 'bg-gray-700 text-gray-300 border border-gray-600'
+                                   : 'bg-gray-100 text-gray-600 border border-gray-300'
                                }`}>
-                                 +{mappingExtractors.length - 2} more
-                               </div>
+                                 +{mappingExtractors.length - 3} more
+                               </span>
                              )}
                            </div>
                          ) : (
-                           <span className="text-xs text-red-500">
+                           <span className={`text-xs px-2 py-1 rounded ${
+                             isDarkMode
+                               ? 'bg-red-900 text-red-300'
+                               : 'bg-red-100 text-red-600'
+                           }`}>
                              No extractors assigned
                            </span>
                          )}
@@ -1680,28 +1836,28 @@ function URLMappings() {
                        <td className="px-6 py-4 whitespace-nowrap">
                          <div className="flex items-center gap-2">
                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                             mapping.is_active 
+                             mapping.isActive 
                                ? 'bg-green-100 text-green-800' 
                                : 'bg-red-100 text-red-800'
                            }`}>
-                             {mapping.is_active ? 'Active' : 'Inactive'}
+                             {mapping.isActive ? 'Active' : 'Inactive'}
                            </span>
                            <button
                              onClick={() => toggleActive(mapping.id)}
                              className={`p-1 rounded transition-all duration-200 hover:scale-110 ${
-                               mapping.is_active 
+                               mapping.isActive 
                                  ? 'text-green-600 hover:bg-green-100' 
                                  : 'text-gray-400 hover:bg-gray-100'
                              }`}
-                             title={mapping.is_active ? 'Disable mapping' : 'Enable mapping'}
+                             title={mapping.isActive ? 'Disable mapping' : 'Enable mapping'}
                            >
-                             {mapping.is_active ? <Power size={16} /> : <PowerOff size={16} />}
+                             {mapping.isActive ? <Power size={16} /> : <PowerOff size={16} />}
                            </button>
                          </div>
                          <div className={`text-xs mt-1 ${
                            isDarkMode ? 'text-gray-400' : 'text-gray-500'
                          }`}>
-                           Rate: {mapping.rate_limit}/min
+                           Rate: {mapping.rateLimit}/min
                          </div>
                        </td>
 

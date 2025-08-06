@@ -69,7 +69,7 @@ const mockMappings: URLMapping[] = [
     name: 'News Article Mapping',
     url: 'https://example-news.com/*',
     url_config_id: 'config-1',
-    extractor_id: 'ext-1',
+    extractor_ids: ['ext-1'],
     priority: 1,
     rate_limit: 10,
     config: JSON.stringify({
@@ -99,7 +99,7 @@ const mockMappings: URLMapping[] = [
     name: 'E-commerce Product Mapping',
     url: 'https://shop-example.com/products/*',
     url_config_id: 'config-2',
-    extractor_id: 'ext-2',
+    extractor_ids: ['ext-2'],
     priority: 2,
     rate_limit: 5,
     config: JSON.stringify({
@@ -147,7 +147,8 @@ export const api = {
       let configsData = [];
       
       if (configsResponse.ok) {
-        configsData = await configsResponse.json();
+        const configsResponse_data = await configsResponse.json();
+        configsData = configsResponse_data.items || configsResponse_data;
       }
       
       // Create a map of config IDs to URLs for quick lookup
@@ -160,7 +161,9 @@ export const api = {
       });
       
       // Transform backend response to frontend format
-      return mappingsData.map((backendMapping: any) => {
+      // Handle both paginated response {items: [...]} and direct array response
+      const mappingsArray = mappingsData.items || mappingsData;
+      return mappingsArray.map((backendMapping: any) => {
         const configInfo = configMap.get(backendMapping.url_config_id);
         
         return {
@@ -168,7 +171,7 @@ export const api = {
           name: backendMapping.name || configInfo?.name || 'Unnamed Mapping',
           url: configInfo?.url || backendMapping.url || 'Unknown URL',
           url_config_id: backendMapping.url_config_id,
-          extractor_id: backendMapping.extractor_id || '',
+          extractor_ids: backendMapping.extractor_ids || [],
           priority: backendMapping.priority || 1,
           rate_limit: backendMapping.rate_limit || 60,
           config: JSON.stringify({
@@ -208,7 +211,7 @@ export const api = {
       const backendMapping: any = {
         name: mapping.name,
         url_config_id: mapping.url_config_id,
-        extractor_id: mapping.extractor_id || '',
+        extractor_ids: mapping.extractor_ids || [],
         priority: mapping.priority || 1,
         rate_limit: mapping.rate_limit || 60,
         is_active: mapping.is_active !== undefined ? mapping.is_active : true
@@ -271,7 +274,7 @@ export const api = {
         name: createdMapping.name || 'Unnamed Mapping',
         url: pattern,
         url_config_id: createdMapping.url_config_id,
-        extractor_id: createdMapping.extractor_id || '',
+        extractor_ids: createdMapping.extractor_ids || [],
         priority: createdMapping.priority || 1,
         rate_limit: createdMapping.rate_limit || 60,
         config: JSON.stringify({
@@ -308,8 +311,8 @@ export const api = {
       const backendUpdates: any = {};
       
       // Map all possible fields from frontend to backend format
-      if (updates.extractor_id !== undefined) {
-        backendUpdates.extractor_id = updates.extractor_id;
+      if (updates.extractor_ids !== undefined) {
+        backendUpdates.extractor_ids = updates.extractor_ids;
       }
       
       if (updates.name !== undefined) {
@@ -402,7 +405,7 @@ export const api = {
         name: updatedMapping.name,
         url: updatedMapping.url,
         url_config_id: updatedMapping.url_config_id,
-        extractor_id: updatedMapping.extractor_id,
+        extractor_ids: updatedMapping.extractor_ids || [],
         priority: updatedMapping.priority || 1,
         rate_limit: updatedMapping.rate_limit || 60,
         config: typeof updatedMapping.config === 'string' ? updatedMapping.config : JSON.stringify(updatedMapping.config || {}),

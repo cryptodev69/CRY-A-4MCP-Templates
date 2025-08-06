@@ -3,7 +3,7 @@ export interface URLMapping {
   name: string;
   url: string;
   url_config_id?: string;
-  extractor_id: string;
+  extractor_ids: string[];
   priority?: number;
   rate_limit?: number;
   config?: string; // JSON string - Extractor-specific configuration

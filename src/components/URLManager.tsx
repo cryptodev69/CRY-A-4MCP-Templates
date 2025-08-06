@@ -356,7 +356,7 @@ const URLManager: React.FC<URLManagerProps> = ({ selectedUrls = [], onUrlsChange
 
   const handleAddConfig = async () => {
     try {
-      const response = await fetch('/api/url-configs/', {
+      const response = await fetch('/api/url-configurations/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -381,7 +381,7 @@ const URLManager: React.FC<URLManagerProps> = ({ selectedUrls = [], onUrlsChange
 
   const handleDeleteConfig = async (configId: number) => {
     try {
-      const response = await fetch(`/api/url-configs/${configId}/`, {
+      const response = await fetch(`/api/url-configurations/${configId}/`, {
         method: 'DELETE',
       });
       
