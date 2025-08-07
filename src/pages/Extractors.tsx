@@ -43,7 +43,7 @@ function Extractors() {
         </h1>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(350px,1fr))] gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {extractors.map((extractor) => (
           <div key={extractor.id} className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/20 p-6 transition-all duration-200 hover:shadow-md dark:hover:shadow-gray-900/30">
             <div className="flex items-start justify-between mb-4">

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { TestTube, Play, CheckCircle, XCircle, Clock, Brain, Search } from 'lucide-react';
-import { api } from '../services/api';
 import { TestResult } from '../types/models';
 import { openRouterService, OpenRouterModel } from '../services/openRouterService';
 import { extractorsService, Extractor } from '../services/extractorsService';
+import { API_BASE_URL } from '../config/api';
 
 interface LLMTestResult {
   success: boolean;
@@ -195,6 +195,8 @@ function TestURL() {
     setIsLoading(true);
     setResult(null);
     setLlmResult(null);
+    
+    const startTime = Date.now();
 
     try {
       if (useLLM) {
@@ -206,8 +208,9 @@ function TestURL() {
           throw new Error('Model selection is required');
         }
         
-        // Test with LLM
+        // Build request body for crawl4ai 0.7.0 API
         const requestBody: {
+          url: string;
           llm_config: {
             provider: string;
             model: string;
@@ -216,10 +219,10 @@ function TestURL() {
             max_tokens: number;
             timeout: number;
           };
-          url: string;
           instruction: string;
           schema?: any;
         } = {
+          url: url,
           llm_config: {
             provider: llmProvider,
             model: llmModel,
@@ -228,8 +231,7 @@ function TestURL() {
             max_tokens: llmMaxTokens,
             timeout: llmTimeout
           },
-          url: url,
-          instruction: llmInstruction
+          instruction: llmInstruction || 'Extract the main content and key information from this webpage.'
         };
         
         // Only include schema if it's not empty
@@ -243,9 +245,9 @@ function TestURL() {
           }
         }
         
-        console.log('Sending request:', requestBody);
+        console.log('Sending crawl4ai 0.7.0 request:', requestBody);
         
-        const response = await fetch('/api/test-url', {
+        const response = await fetch(`${API_BASE_URL}/api/test-url`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -268,11 +270,70 @@ function TestURL() {
         }
         
         const llmTestResult = await response.json();
-        setLlmResult(llmTestResult);
+        const endTime = Date.now();
+        
+        // Handle crawl4ai 0.7.0 response format
+        const processedResult = {
+          success: llmTestResult.success !== undefined ? llmTestResult.success : !llmTestResult.error_message,
+          data: llmTestResult.extraction_result || llmTestResult.data,
+          error: llmTestResult.error_message || llmTestResult.error,
+          response_time: endTime - startTime,
+          timestamp: new Date().toISOString(),
+          metadata: llmTestResult.metadata || {
+            extractor_used: llmTestResult.extractor_used || 'LLM',
+            model_used: llmModel,
+            extraction_time_ms: endTime - startTime
+          }
+        };
+        
+        setLlmResult(processedResult);
       } else {
-        // Test with existing extractor
-        const testResult = await api.testUrl(url, extractorId);
-        setResult(testResult);
+        // Test with existing extractor using crawl4ai 0.7.0 API
+        const requestBody = {
+          url: url,
+          extractor_id: extractorId
+        };
+        
+        const response = await fetch(`${API_BASE_URL}/api/test-url`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+          let errorMessage = `HTTP error! status: ${response.status}`;
+          try {
+            const errorData = await response.json();
+            if (errorData.detail) {
+              errorMessage = errorData.detail;
+            }
+          } catch (e) {
+            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+          }
+          throw new Error(errorMessage);
+        }
+        
+        const testResult = await response.json();
+        const endTime = Date.now();
+        
+        // Convert to expected format
+        const processedResult = {
+          url: testResult.url || url,
+          extractorId: testResult.extractor_used || extractorId,
+          success: testResult.success !== undefined ? testResult.success : !testResult.error_message,
+          data: testResult.extraction_result || testResult.data,
+          error: testResult.error_message || testResult.error,
+          responseTime: endTime - startTime,
+          timestamp: new Date(),
+          metadata: testResult.metadata || {
+            extractor_used: testResult.extractor_used || extractorId,
+            extraction_time_ms: endTime - startTime
+          }
+        };
+        
+        setResult(processedResult);
       }
     } catch (error) {
       console.error('Test failed:', error);
@@ -678,15 +739,89 @@ function TestURL() {
           </div>
 
           {((result?.success && result.data) || (llmResult?.success && llmResult.data)) ? (
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
-                Extracted Data
-              </h3>
-              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-md overflow-auto">
-                <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                  {JSON.stringify(llmResult?.data || result?.data, null, 2)}
-                </pre>
-              </div>
+            <div className="space-y-6">
+              {/* LLM Extraction Results */}
+              {llmResult?.success && llmResult.data?.llm_extraction && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    LLM Extracted Data
+                  </h3>
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-700 p-4 rounded-md">
+                    <pre className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap overflow-auto">
+                      {(() => {
+                        try {
+                          // If llm_extraction is a string, try to parse it as JSON
+                          if (typeof llmResult.data.llm_extraction === 'string') {
+                            const parsed = JSON.parse(llmResult.data.llm_extraction);
+                            return JSON.stringify(parsed, null, 2);
+                          }
+                          // If it's already an object, stringify it directly
+                          return JSON.stringify(llmResult.data.llm_extraction, null, 2);
+                        } catch (error) {
+                          // If parsing fails, display the raw string
+                          return llmResult.data.llm_extraction;
+                        }
+                      })()}
+                    </pre>
+                  </div>
+                </div>
+              )}
+              
+              {/* Schema Used */}
+              {llmResult?.success && llmSchema && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
+                    Schema Used for Extraction
+                  </h3>
+                  <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-4 rounded-md">
+                    <pre className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap overflow-auto">
+                      {llmSchema}
+                    </pre>
+                  </div>
+                </div>
+              )}
+              
+              {/* Page Metadata */}
+              {(llmResult?.success || result?.success) && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
+                    Page Information
+                  </h3>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-md space-y-2">
+                    {(llmResult?.data?.title || result?.data?.title) && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Title: </span>
+                        <span className="text-sm text-gray-900 dark:text-white">
+                          {llmResult?.data?.title || result?.data?.title}
+                        </span>
+                      </div>
+                    )}
+                    {llmResult?.data?.metadata && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Provider: </span>
+                        <span className="text-sm text-gray-900 dark:text-white">
+                          {llmResult.data.metadata.provider} ({llmResult.data.metadata.model})
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Raw Data (Collapsible) */}
+              {!llmResult && result?.success && result.data && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
+                    Extracted Data
+                  </h3>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-md overflow-auto">
+                    <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                      {JSON.stringify(result.data, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (result?.error || llmResult?.error) && (
             <div>
