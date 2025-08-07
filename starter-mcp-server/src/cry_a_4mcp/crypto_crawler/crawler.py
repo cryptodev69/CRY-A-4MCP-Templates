@@ -11,12 +11,24 @@ from typing import Dict, List, Optional, Union
 from datetime import datetime
 import asyncio
 import os
+import time
+import logging
 
 # Import from crawl4ai library
-from crawl4ai import AsyncWebCrawler
-
-# Import for chunking strategy
-from crawl4ai.chunking_strategy import RegexChunking
+try:
+    from crawl4ai import AsyncWebCrawler, LLMConfig, LLMExtractionStrategy, CrawlerRunConfig, CacheMode, BrowserConfig
+    from crawl4ai.chunking_strategy import RegexChunking
+    CRAWL4AI_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: crawl4ai not available: {e}")
+    AsyncWebCrawler = None
+    LLMConfig = None
+    LLMExtractionStrategy = None
+    CrawlerRunConfig = None
+    CacheMode = None
+    BrowserConfig = None
+    RegexChunking = None
+    CRAWL4AI_AVAILABLE = False
 
 from .models import CrawlResult, CryptoEntity, CryptoTriple, CrawlMetadata
 from .extractors import CryptoEntityExtractor, CryptoTripleExtractor
@@ -116,8 +128,7 @@ class CryptoCrawler:
         try:
             # Use Crawl4AI to crawl the website with async context manager
             async with self.crawler as crawler:
-                # Import required classes from crawl4ai 0.7.0
-                from crawl4ai import CrawlerRunConfig, CacheMode
+                # Use imported classes from crawl4ai 0.7.0
                 
                 # Create crawler run config for crawl4ai 0.7.0
                 run_config = CrawlerRunConfig(
@@ -499,36 +510,44 @@ class GenericAsyncCrawler:
             # Initialize LLM extraction strategy
             logger.info("Initializing LLM extraction strategy...")
             try:
-                # Import the LLMExtractionStrategy from crawl4ai library
-                logger.debug("Attempting to import LLMExtractionStrategy...")
-                from crawl4ai.extraction_strategy import LLMExtractionStrategy
-                logger.info("LLMExtractionStrategy imported successfully")
+                # Check if LLMExtractionStrategy is available
+                logger.debug("Checking LLMExtractionStrategy availability...")
+                if not CRAWL4AI_AVAILABLE or LLMExtractionStrategy is None:
+                    raise ImportError("LLMExtractionStrategy not available")
+                logger.info("LLMExtractionStrategy is available")
                 
-                # Use provided API key or fall back to config/environment
-                llm_api_key = api_key or self.llm_config.get("api_key") or os.environ.get(f"{provider.upper()}_API_KEY")
+                # Check for API key with multiple fallbacks
+                llm_api_key = (
+                    api_key or 
+                    self.llm_config.get("api_key") or 
+                    os.environ.get(f"{provider.upper()}_API_KEY") or
+                    os.environ.get("OPENROUTER_API_KEY") if provider == "openrouter" else None or
+                    os.environ.get("OPENAI_API_KEY") if provider == "openai" else None
+                )
                 logger.debug(f"API key check - Provided: {bool(api_key)}, Config: {bool(self.llm_config.get('api_key'))}, Env: {bool(os.environ.get(f'{provider.upper()}_API_KEY'))}")
                 
                 if not llm_api_key:
-                    error_msg = f"No API key provided for {provider}. Checked: provided key, config, and {provider.upper()}_API_KEY environment variable"
-                    logger.error(error_msg)
-                    return {
-                        "url": url,
-                        "success": False,
-                        "error": error_msg,
-                        "response_time": time.time() - start_time,
-                        "timestamp": datetime.now().isoformat()
-                    }
+                    logger.warning(f"No API key provided for {provider}. Checked: provided key, config, and environment variables. Proceeding without API key - may use default configuration.")
                 
                 # Create LLM extraction strategy
                 model_to_use = model or self.llm_config.get("model")
-                logger.info(f"Creating LLM extraction strategy with model: {model_to_use}")
                 
-                # Import required classes from crawl4ai 0.7.0
-                from crawl4ai import LLMConfig, CrawlerRunConfig, CacheMode
+                # Format model name correctly for different providers
+                if provider == "openrouter" and model_to_use and not model_to_use.startswith("openrouter/"):
+                    # For OpenRouter, ensure model name has the correct prefix
+                    formatted_model = f"openrouter/{model_to_use}"
+                    logger.info(f"Formatted OpenRouter model: {model_to_use} -> {formatted_model}")
+                    model_to_use = formatted_model
+                
+                logger.info(f"Creating LLM extraction strategy with provider: {provider}, model: {model_to_use}")
+                
+                # Use imported classes from crawl4ai 0.7.0
                 
                 # Create LLMConfig object
+                # In crawl4ai 0.7.0, provider should contain the full model specification
+                provider_with_model = model_to_use if model_to_use else provider
                 llm_config = LLMConfig(
-                    provider=provider,
+                    provider=provider_with_model,
                     api_token=llm_api_key
                 )
                 
@@ -630,8 +649,7 @@ class GenericAsyncCrawler:
         if AsyncWebCrawler and self.crawler:
             logger.info("Using Crawl4AI for crawling")
             try:
-                # Import required classes from crawl4ai 0.7.0
-                from crawl4ai import CrawlerRunConfig, CacheMode
+                # Use imported classes from crawl4ai 0.7.0
                 
                 # Create crawler run config for basic crawling
                 run_config = CrawlerRunConfig(
@@ -716,9 +734,7 @@ class GenericAsyncCrawler:
             return
         
         try:
-            if AsyncWebCrawler:
-                # Import BrowserConfig from crawl4ai 0.7.0
-                from crawl4ai import BrowserConfig
+            if AsyncWebCrawler and BrowserConfig:
                 
                 # Create browser config
                 browser_config = BrowserConfig(

@@ -24,7 +24,7 @@
 
 - This script starts both frontend and backend servers
 - Backend runs on port 4000 using `python -m src.cry_a_4mcp.web_api`
-- Frontend runs on port 5000 (or alternative if needed)
+- Frontend runs on port 3000 (or alternative if needed)
 - To use: `./start-dev.sh` from project root
 - **STOP SEARCHING FOR HOW TO RUN WEB_API - USE THIS SCRIPT!**
 
