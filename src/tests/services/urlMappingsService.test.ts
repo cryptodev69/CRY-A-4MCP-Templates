@@ -252,7 +252,7 @@ describe('URLMappingsService', () => {
         updated_at: '2024-01-01T00:00:00Z'
       };
 
-      const result = await service.transformURLMappingToFrontend(backendMapping);
+      const result = await service.transformURLMappingToFrontend(backendMapping, []);
 
       expect(result).toEqual({
         id: '1',

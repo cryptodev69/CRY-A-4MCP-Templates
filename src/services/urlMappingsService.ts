@@ -256,7 +256,7 @@ class URLMappingsService {
     };
   }
 
-  async transformURLMappingToFrontend(mapping: any): Promise<URLMappingDisplay> {
+  async transformURLMappingToFrontend(mapping: any, configurations?: URLConfigurationResponse[]): Promise<URLMappingDisplay> {
     console.log('🔍 transformURLMappingToFrontend - Input mapping:', mapping);
     console.log('  - Input priority:', mapping.priority);
     
@@ -266,27 +266,78 @@ class URLMappingsService {
     // Handle both single extractor (legacy) and multiple extractors (future)
     const extractorIds = mapping.extractor_ids || [];
     
-    // If configuration is missing but we have configurationId, fetch it
+    // If configuration is missing but we have configurationId, try to find it in provided configurations first
     let configurationData = mapping.configuration;
     let url = mapping.configuration?.url || '';
     let name = mapping.name || `Mapping ${mapping.id}`; // Use mapping.name, not configuration.name!
     
     if (!configurationData && configurationId) {
-      try {
-        console.log('🔍 Configuration missing, fetching for ID:', configurationId);
-        configurationData = await this.getURLConfiguration(configurationId);
-        url = configurationData.url;
-        // Don't override mapping name with configuration name
-        console.log('🔍 Fetched configuration:', configurationData);
-      } catch (error) {
-        console.warn('⚠️ Failed to fetch configuration for ID:', configurationId, error);
-        // Keep defaults if fetch fails
+      // First try to find in provided configurations array (from getAllDataForUI)
+      if (configurations) {
+        configurationData = configurations.find(config => config.id === configurationId);
+        if (configurationData) {
+          url = configurationData.url;
+          console.log('🔍 Found configuration in provided array:', configurationData);
+        }
+      }
+      
+      // If still not found, fetch it individually (fallback)
+      if (!configurationData) {
+        try {
+          console.log('🔍 Configuration missing, fetching for ID:', configurationId);
+          configurationData = await this.getURLConfiguration(configurationId);
+          url = configurationData.url;
+          // Don't override mapping name with configuration name
+          console.log('🔍 Fetched configuration:', configurationData);
+        } catch (error) {
+          console.warn('⚠️ Failed to fetch configuration for ID:', configurationId, error);
+          // Try to get URL from cache or existing mappings if fetch fails
+          const cachedMapping = this.getCachedMappingById(mapping.id);
+          if (cachedMapping?.url) {
+            url = cachedMapping.url;
+            console.log('🔍 Using cached URL:', url);
+          }
+        }
       }
     }
     
+    // Parse metadata to extract fields that might be stored there
+    let parsedMetadata: any = {};
+    try {
+      if (typeof mapping.metadata === 'string') {
+        parsedMetadata = JSON.parse(mapping.metadata);
+      } else if (mapping.metadata && typeof mapping.metadata === 'object') {
+        parsedMetadata = mapping.metadata;
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to parse metadata:', mapping.metadata, error);
+      parsedMetadata = {};
+    }
+
+    // Extract fields with fallback to metadata
+    const extractedName = mapping.name || parsedMetadata.name || `Mapping ${mapping.id}`;
+    
+    // Handle tags - can be array or string in metadata
+    let extractedTags = mapping.tags || [];
+    if ((!extractedTags || extractedTags.length === 0) && parsedMetadata.tags) {
+      if (Array.isArray(parsedMetadata.tags)) {
+        extractedTags = parsedMetadata.tags;
+      } else if (typeof parsedMetadata.tags === 'string') {
+        // Handle comma-separated string or JSON array string
+        try {
+          extractedTags = JSON.parse(parsedMetadata.tags);
+        } catch {
+          extractedTags = parsedMetadata.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag);
+        }
+      }
+    }
+    
+    const extractedNotes = mapping.notes || parsedMetadata.notes || '';
+    const extractedCategory = mapping.category || parsedMetadata.category || '';
+
     const transformed = {
       id: mapping.id,
-      name: name,
+      name: extractedName,
       configurationId: configurationId,
       extractorIds: extractorIds, // Multiple extractors support
       rateLimit: mapping.rate_limit,
@@ -301,11 +352,15 @@ class URLMappingsService {
       lastExtracted: null,
       created_at: mapping.created_at,
       updated_at: mapping.updated_at,
-      tags: mapping.tags || [],
-      notes: mapping.notes || '',
-      category: mapping.category || '',
+      tags: extractedTags,
+      notes: extractedNotes,
+      category: extractedCategory,
+      metadata: mapping.metadata || {},
       configuration: configurationData ? this.transformURLConfigurationToFrontend(configurationData) : undefined
     };
+    
+    // Store in cache for future reference
+    this.cacheMappingData(transformed);
     
     console.log('🔍 transformURLMappingToFrontend - Output:', transformed);
     console.log('  - Output priority:', transformed.priority);
@@ -327,6 +382,7 @@ class URLMappingsService {
     console.log('  - tags:', mapping.tags);
     console.log('  - notes:', mapping.notes);
     console.log('  - category:', mapping.category);
+    console.log('  - metadata:', mapping.metadata);
     console.log('  - crawlerSettings:', mapping.crawlerSettings);
     console.log('  - validationRules:', mapping.validationRules);
     
@@ -385,7 +441,8 @@ class URLMappingsService {
       is_active: mapping.isActive,
       tags: mapping.tags || [],
       notes: mapping.notes || '',
-      category: mapping.category || ''
+      category: mapping.category || '',
+      metadata: typeof mapping.metadata === 'string' ? JSON.parse(mapping.metadata || '{}') : mapping.metadata || {}
     };
     
     console.log('🔍 ===== FINAL UPDATE REQUEST DATA =====');
@@ -400,6 +457,7 @@ class URLMappingsService {
     console.log('  - tags:', transformedData.tags, typeof transformedData.tags);
     console.log('  - notes:', transformedData.notes, typeof transformedData.notes);
     console.log('  - category:', transformedData.category, typeof transformedData.category);
+    console.log('  - metadata:', transformedData.metadata, typeof transformedData.metadata);
     console.log('🔍 ===== END UPDATE REQUEST DATA =====');
     
     return transformedData;
@@ -433,6 +491,17 @@ class URLMappingsService {
     };
   }
 
+  // Cache for mapping data to preserve URLs during updates
+  private mappingCache = new Map<string, URLMappingDisplay>();
+  
+  private getCachedMappingById(id: string): URLMappingDisplay | undefined {
+    return this.mappingCache.get(id);
+  }
+  
+  private cacheMappingData(mapping: URLMappingDisplay): void {
+    this.mappingCache.set(mapping.id, mapping);
+  }
+  
   // Combined operations for the frontend
   async getAllDataForUI(): Promise<{
     urlConfigurations: URLConfig[];
@@ -474,7 +543,7 @@ class URLMappingsService {
           this.transformURLConfigurationToFrontend(config)
         ),
         urlMappings: await Promise.all(mappings.map(mapping => 
-          this.transformURLMappingToFrontend(mapping)
+          this.transformURLMappingToFrontend(mapping, configurations)
         )),
         extractors: extractors.map((extractor: ExtractorResponse) => 
           this.transformExtractorToFrontend(extractor)

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useApp } from '../contexts/AppContext';
+import React, { useState, useEffect, useCallback } from 'react';
 import { TestTube, Play, CheckCircle, XCircle, Clock, Brain, Search } from 'lucide-react';
 import { api } from '../services/api';
 import { TestResult } from '../types/models';
 import { openRouterService, OpenRouterModel } from '../services/openRouterService';
+import { extractorsService, Extractor } from '../services/extractorsService';
 
 interface LLMTestResult {
   success: boolean;
@@ -20,12 +20,15 @@ interface LLMTestResult {
 }
 
 function TestURL() {
-  const { state } = useApp();
-  const { extractors } = state;
   const [url, setUrl] = useState('');
   const [extractorId, setExtractorId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<TestResult | null>(null);
+  
+  // Extractors state
+  const [extractors, setExtractors] = useState<Extractor[]>([]);
+  const [loadingExtractors, setLoadingExtractors] = useState(false);
+  const [extractorsError, setExtractorsError] = useState<string | null>(null);
   
   // LLM Configuration
   const [useLLM, setUseLLM] = useState(false);
@@ -46,11 +49,33 @@ function TestURL() {
   const [loadingModels, setLoadingModels] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
 
-  // Filter LLM extractors (those with schema and instruction)
-  const llmExtractors = extractors.filter(e => 
-    e.isActive && e.config?.schema && e.config?.instruction
-  );
+  // Filter LLM extractors (those with schema and description)
+  const llmExtractors = extractorsService.getLLMExtractors(extractors);
 
+  // Load extractors function
+  const loadExtractors = async () => {
+    setLoadingExtractors(true);
+    setExtractorsError(null);
+    try {
+      const response = await extractorsService.fetchExtractors();
+      if (response.success) {
+        setExtractors(response.extractors);
+      } else {
+        setExtractorsError(response.message || 'Failed to load extractors');
+      }
+    } catch (error) {
+      setExtractorsError('Error loading extractors');
+      console.error('Error loading extractors:', error);
+    } finally {
+      setLoadingExtractors(false);
+    }
+  };
+
+  // Load extractors on component mount
+  useEffect(() => {
+    loadExtractors();
+  }, []);
+  
   // Load API keys from localStorage on component mount
   useEffect(() => {
     const storedApiKeys = localStorage.getItem('apiKeys');
@@ -68,14 +93,8 @@ function TestURL() {
   }, [llmProvider]);
   
   // Load OpenRouter models when provider changes to OpenRouter
-  useEffect(() => {
-    if (llmProvider === 'openrouter' && llmApiKey) {
-      loadOpenRouterModels();
-    }
-  }, [llmProvider, llmApiKey]);
-  
   // Load OpenRouter models function
-  const loadOpenRouterModels = async () => {
+  const loadOpenRouterModels = useCallback(async () => {
     if (!llmApiKey) {
       console.warn('OpenRouter API key is required');
       return;
@@ -94,7 +113,13 @@ function TestURL() {
     } finally {
       setLoadingModels(false);
     }
-  };
+  }, [llmApiKey]);
+  
+  useEffect(() => {
+    if (llmProvider === 'openrouter') {
+      loadOpenRouterModels();
+    }
+  }, [llmProvider, loadOpenRouterModels]);
   
   // Filter models based on search query
   const filteredModels = openRouterService.filterModels(openRouterModels, modelSearchQuery);
@@ -135,27 +160,31 @@ function TestURL() {
   };
 
   // Handle LLM extractor selection
-  const handleLLMExtractorChange = (extractorId: string) => {
+  const handleLLMExtractorChange = async (extractorId: string) => {
     setSelectedLLMExtractor(extractorId);
     if (extractorId) {
-      const extractor = extractors.find(e => e.id === extractorId);
-      if (extractor?.config) {
-        // Auto-populate schema and instruction from selected extractor
-        if (extractor.config.schema) {
-          setLlmSchema(JSON.stringify(extractor.config.schema, null, 2));
+      try {
+        // Fetch detailed extractor information
+        const response = await extractorsService.fetchExtractor(extractorId);
+        if (response.success && response.extractor) {
+          const extractor = response.extractor;
+          
+          // Auto-populate schema from selected extractor
+          if (extractor.schema) {
+            setLlmSchema(extractorsService.formatSchemaForDisplay(extractor.schema));
+          }
+          
+          // Auto-populate instruction from extractor description
+          const instruction = extractorsService.getInstructionFromExtractor(extractor);
+          setLlmInstruction(instruction);
         }
-        if (extractor.config.instruction) {
-          setLlmInstruction(extractor.config.instruction);
-        }
-        if (extractor.config.default_provider) {
-          setLlmProvider(extractor.config.default_provider);
-        }
+      } catch (error) {
+        console.error('Error fetching extractor details:', error);
       }
     } else {
       // Reset to defaults when no extractor is selected
       setLlmInstruction('Extract the main content and key information from this webpage.');
       setLlmSchema('');
-      setLlmProvider('openai');
     }
   };
 
@@ -322,9 +351,9 @@ function TestURL() {
                 required={!useLLM}
               >
                 <option value="">Select an extractor</option>
-                {extractors.filter(e => e.isActive).map((extractor) => (
+                {extractors.map((extractor) => (
                   <option key={extractor.id} value={extractor.id}>
-                    {extractor.name} (v{extractor.version})
+                    {extractor.name}
                   </option>
                 ))}
               </select>
@@ -346,11 +375,14 @@ function TestURL() {
                   value={selectedLLMExtractor}
                   onChange={(e) => handleLLMExtractorChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                  disabled={loadingExtractors}
                 >
-                  <option value="">Select a pre-configured LLM extractor or configure manually</option>
+                  <option value="">
+                    {loadingExtractors ? 'Loading extractors...' : 'Select a pre-configured LLM extractor or configure manually'}
+                  </option>
                   {llmExtractors.map((extractor) => (
                     <option key={extractor.id} value={extractor.id}>
-                      {extractor.name} (v{extractor.version})
+                      {extractor.name}
                     </option>
                   ))}
                 </select>
@@ -358,6 +390,17 @@ function TestURL() {
                   <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                     Schema and instruction will be auto-populated from the selected extractor
                   </p>
+                )}
+                {loadingExtractors && (
+                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="w-3 h-3 border border-gray-300 border-t-purple-600 rounded-full animate-spin"></div>
+                    Loading available extractors...
+                  </div>
+                )}
+                {extractorsError && (
+                  <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-700 dark:text-red-300">
+                    Error loading extractors: {extractorsError}
+                  </div>
                 )}
               </div>
               
@@ -555,8 +598,8 @@ function TestURL() {
                 {selectedExtractor.description}
               </p>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                <p>Success Rate: {selectedExtractor.successRate?.toFixed(1) || 0}%</p>
-                <p>Usage Count: {selectedExtractor.usageCount?.toLocaleString() || 0}</p>
+                <p>ID: {selectedExtractor.id}</p>
+                <p>File: {selectedExtractor.file_path}</p>
               </div>
             </div>
           )}

@@ -521,11 +521,39 @@ function URLMappings() {
         console.log('🔍 Backend response for UPDATE:', updatedMapping);
         
         // Transform the backend response to frontend format
-        const transformedMapping = await urlMappingsService.transformURLMappingToFrontend(updatedMapping);
+        const transformedMapping = await urlMappingsService.transformURLMappingToFrontend(updatedMapping, urlConfigs.map(config => ({
+          id: config.id,
+          name: config.name,
+          url: config.url,
+          profile_type: config.profileType,
+          category: config.category,
+          description: config.description,
+          priority: config.priority,
+          scraping_difficulty: config.scrapingDifficulty,
+          has_official_api: config.hasOfficialAPI,
+          is_active: config.isActive,
+          created_at: config.createdAt,
+          updated_at: config.updatedAt
+        })));
         
-        // Update the local state with the updated mapping
+        // Preserve existing fields that might be missing from backend response
+        const preservedMapping = {
+          ...editingMapping, // Start with current mapping to preserve all fields
+          ...transformedMapping, // Override with updated fields
+          // Explicitly preserve critical fields that might be lost
+          url: transformedMapping.url || editingMapping.url,
+          name: transformedMapping.name || editingMapping.name,
+          configuration: transformedMapping.configuration || editingMapping.configuration,
+          configurationId: transformedMapping.configurationId || editingMapping.configurationId,
+          extractorIds: transformedMapping.extractorIds || editingMapping.extractorIds
+        };
+        
+        console.log('🔍 Form submit - Preserved mapping with URL:', preservedMapping);
+        console.log('  - Preserved URL:', preservedMapping.url);
+        
+        // Update the local state with the preserved mapping
         setMappings(prev => prev.map(m => 
-          m.id === editingMapping.id ? transformedMapping : m
+          m.id === editingMapping.id ? preservedMapping : m
         ));
         
         // Close the form after successful update
@@ -547,7 +575,20 @@ function URLMappings() {
         
         console.log('🔍 Backend response for CREATE:', newMapping);
         
-        const transformedMapping = await urlMappingsService.transformURLMappingToFrontend(newMapping);
+        const transformedMapping = await urlMappingsService.transformURLMappingToFrontend(newMapping, urlConfigs.map(config => ({
+          id: config.id,
+          name: config.name,
+          url: config.url,
+          profile_type: config.profileType,
+          category: config.category,
+          description: config.description,
+          priority: config.priority,
+          scraping_difficulty: config.scrapingDifficulty,
+          has_official_api: config.hasOfficialAPI,
+          is_active: config.isActive,
+          created_at: config.createdAt,
+          updated_at: config.updatedAt
+        })));
         
         setMappings(prev => [...prev, transformedMapping]);
         
@@ -663,10 +704,35 @@ function URLMappings() {
         is_active: !mapping.isActive
       });
       
-      const transformedMapping = await urlMappingsService.transformURLMappingToFrontend(updatedMapping);
+      const transformedMapping = await urlMappingsService.transformURLMappingToFrontend(updatedMapping, urlConfigs.map(config => ({
+        id: config.id,
+        name: config.name,
+        url: config.url,
+        profile_type: config.profileType,
+        category: config.category,
+        description: config.description,
+        priority: config.priority,
+        scraping_difficulty: config.scrapingDifficulty,
+        has_official_api: config.hasOfficialAPI,
+        is_active: config.isActive,
+        created_at: config.createdAt,
+        updated_at: config.updatedAt
+      })));
+      
+      // Preserve existing fields that might be missing from backend response
+      const preservedMapping = {
+        ...mapping, // Start with current mapping to preserve all fields
+        ...transformedMapping, // Override with updated fields
+        // Explicitly preserve critical fields that might be lost
+        url: transformedMapping.url || mapping.url,
+        name: transformedMapping.name || mapping.name,
+        configuration: transformedMapping.configuration || mapping.configuration,
+        configurationId: transformedMapping.configurationId || mapping.configurationId,
+        extractorIds: transformedMapping.extractorIds || mapping.extractorIds
+      };
       
       setMappings(prev => prev.map(m => 
-        m.id === mappingId ? transformedMapping : m
+        m.id === mappingId ? preservedMapping : m
       ));
       
     } catch (err) {
@@ -718,7 +784,20 @@ function URLMappings() {
       console.log('  - Response priority:', updatedMappingResponse.priority);
       
       // Transform backend response to frontend format
-      const updatedMapping = await urlMappingsService.transformURLMappingToFrontend(updatedMappingResponse);
+      const updatedMapping = await urlMappingsService.transformURLMappingToFrontend(updatedMappingResponse, urlConfigs.map(config => ({
+        id: config.id,
+        name: config.name,
+        url: config.url,
+        profile_type: config.profileType,
+        category: config.category,
+        description: config.description,
+        priority: config.priority,
+        scraping_difficulty: config.scrapingDifficulty,
+        has_official_api: config.hasOfficialAPI,
+        is_active: config.isActive,
+        created_at: config.createdAt,
+        updated_at: config.updatedAt
+      })));
       
       console.log('🔍 Transformed mapping:', updatedMapping);
       console.log('  - Transformed priority:', updatedMapping.priority);
@@ -726,15 +805,19 @@ function URLMappings() {
       
       // Preserve existing fields that might be missing from backend response
       const preservedMapping = {
-        ...updatedMapping,
-        // Preserve URL and other important fields from current mapping if missing in response
+        ...mapping, // Start with current mapping to preserve all fields
+        ...updatedMapping, // Override with updated fields
+        // Explicitly preserve critical fields that might be lost
         url: updatedMapping.url || mapping.url,
         name: updatedMapping.name || mapping.name,
-        configuration: updatedMapping.configuration || mapping.configuration
+        configuration: updatedMapping.configuration || mapping.configuration,
+        configurationId: updatedMapping.configurationId || mapping.configurationId,
+        extractorIds: updatedMapping.extractorIds || mapping.extractorIds
       };
       
       console.log('🔍 Preserved mapping with URL:', preservedMapping);
       console.log('  - Preserved URL:', preservedMapping.url);
+      console.log('  - Preserved configuration:', preservedMapping.configuration);
       
       // Update local state with the preserved mapping
       setMappings(prev => {
@@ -1760,29 +1843,72 @@ function URLMappings() {
                            }`}>
                              {mapping.name}
                            </div>
-                             {mapping.tags && mapping.tags.length > 0 && (
-                               <div className="flex flex-wrap gap-1 mt-2">
-                                 {mapping.tags.slice(0, 3).map((tag, index) => (
-                                   <span key={index} className={`text-xs px-2 py-1 rounded ${
-                                     isDarkMode 
-                                       ? 'bg-gray-600 text-gray-300' 
-                                       : 'bg-gray-100 text-gray-700'
-                                   }`}>
-                                     {tag}
-                                   </span>
-                                 ))}
-                                 {mapping.tags.length > 3 && (
-                                   <span className={`text-xs px-2 py-1 rounded ${
-                                     isDarkMode 
-                                       ? 'bg-gray-600 text-gray-300' 
-                                       : 'bg-gray-100 text-gray-700'
-                                   }`}>
-                                     +{mapping.tags.length - 3}
-                                   </span>
-                                 )}
-                               </div>
+                           
+                           {/* Category */}
+                           {mapping.category && (
+                             <div className="mt-1">
+                               <span className={`text-xs px-2 py-1 rounded-full ${
+                                 isDarkMode 
+                                   ? 'bg-blue-900 text-blue-300 border border-blue-700' 
+                                   : 'bg-blue-100 text-blue-800 border border-blue-200'
+                               }`}>
+                                 {mapping.category}
+                               </span>
+                             </div>
+                           )}
+                           
+                           {/* Tags */}
+                           {mapping.tags && mapping.tags.length > 0 && (
+                             <div className="flex flex-wrap gap-1 mt-2">
+                               {mapping.tags.slice(0, 3).map((tag, index) => (
+                                 <span key={index} className={`text-xs px-2 py-1 rounded ${
+                                   isDarkMode 
+                                     ? 'bg-gray-600 text-gray-300' 
+                                     : 'bg-gray-100 text-gray-700'
+                                 }`}>
+                                   {tag}
+                                 </span>
+                               ))}
+                               {mapping.tags.length > 3 && (
+                                 <span className={`text-xs px-2 py-1 rounded ${
+                                   isDarkMode 
+                                     ? 'bg-gray-600 text-gray-300' 
+                                     : 'bg-gray-100 text-gray-700'
+                                 }`}>
+                                   +{mapping.tags.length - 3}
+                                 </span>
+                               )}
+                             </div>
+                           )}
+                           
+                           {/* Notes and Metadata indicators */}
+                           <div className="flex gap-2 mt-2">
+                             {mapping.notes && (
+                               <span 
+                                 className={`text-xs px-2 py-1 rounded cursor-help ${
+                                   isDarkMode 
+                                     ? 'bg-yellow-900 text-yellow-300 border border-yellow-700' 
+                                     : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                 }`}
+                                 title={mapping.notes}
+                               >
+                                 📝 Notes
+                               </span>
+                             )}
+                             {mapping.metadata && Object.keys(mapping.metadata).length > 0 && (
+                               <span 
+                                 className={`text-xs px-2 py-1 rounded cursor-help ${
+                                   isDarkMode 
+                                     ? 'bg-purple-900 text-purple-300 border border-purple-700' 
+                                     : 'bg-purple-100 text-purple-800 border border-purple-200'
+                                 }`}
+                                 title={JSON.stringify(mapping.metadata, null, 2)}
+                               >
+                                 🔧 Metadata
+                               </span>
                              )}
                            </div>
+                         </div>
                        </td>
 
                        {/* Extractor Column */}
