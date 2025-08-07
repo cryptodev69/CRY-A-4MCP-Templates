@@ -55,9 +55,9 @@ from ...crypto_crawler.crawler import GenericAsyncCrawler  # Crawler integration
 from ..models import CrawlJobCreate, CrawlJobUpdate, CrawlJobResponse  # Pydantic models
 
 # FastAPI router configuration
-# Prefix groups all endpoints under /api/crawl-jobs namespace
+# Prefix groups all endpoints under /crawl-jobs namespace
 # Tags enable automatic API documentation grouping
-router = APIRouter(prefix="/api/crawl-jobs", tags=["Crawl Jobs"])
+router = APIRouter(prefix="/crawl-jobs", tags=["Crawl Jobs"])
 
 # Module-level logger for tracking API operations and debugging
 # Uses the module name for easy log filtering and monitoring

@@ -44,6 +44,8 @@ from .endpoints.url_mappings import setup_url_mapping_routes
 from .endpoints.crawlers import setup_crawler_routes
 from .endpoints.crawl_jobs import setup_crawl_job_routes
 from .endpoints.extractors import router as extractors_router
+from .endpoints.test_url import router as test_url_router
+from .endpoints.openrouter import setup_openrouter_routes
 
 # Database type imports for type hints
 from ..storage.url_configuration_db import URLConfigurationDatabase
@@ -114,8 +116,8 @@ def create_api_router(
     """
     logger.info("Creating main API router with all endpoint modules")
     
-    # Create the main router instance
-    main_router = APIRouter()
+    # Create the main router instance with /api prefix
+    main_router = APIRouter(prefix="/api")
     
     try:
         # Setup unified URL configuration routes
@@ -144,6 +146,15 @@ def create_api_router(
         # Include extractor routes (no setup function needed)
         logger.debug("Including extractor routes")
         main_router.include_router(extractors_router)
+        
+        # Include test URL routes
+        logger.debug("Including test URL routes")
+        main_router.include_router(test_url_router)
+        
+        # Include OpenRouter routes
+        logger.debug("Including OpenRouter routes")
+        openrouter_router = setup_openrouter_routes()
+        main_router.include_router(openrouter_router)
         
         logger.info("Successfully created main API router with all endpoints")
         return main_router

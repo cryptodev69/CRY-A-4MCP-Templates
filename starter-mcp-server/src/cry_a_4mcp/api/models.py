@@ -44,7 +44,7 @@ Version: 1.0.0
 """
 
 # Standard library imports for type hints and datetime handling
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
 
 # Pydantic imports for data validation and serialization
@@ -121,10 +121,10 @@ class ExtractorResponse(BaseModel):
     )
     
     # Data schema definition (optional, may be empty)
-    schema: str = Field(
+    schema: Union[str, Dict[str, Any]] = Field(
         default="",
         description="Data schema definition for extracted content",
-        example="title,content,timestamp,sentiment,source"
+        example={"type": "object", "properties": {"title": {"type": "string"}}}
     )
     
     # Source file path for the strategy implementation
@@ -1378,10 +1378,10 @@ class CrawlerConfigResponse(CrawlerConfigBase):
         }
     """
     # Unique database identifier
-    id: int = Field(
+    id: str = Field(
         ...,
         description="Unique identifier for the crawler configuration",
-        example=789
+        example="7e0bb2bd-7f77-4b2f-a99b-896eaa8bd217"
     )
     
     # System-managed timestamps
@@ -1834,6 +1834,46 @@ class CrawlJobResponse(CrawlJobBase):
 # ============================================================================
 # Models for testing and validating URL extraction processes
 
+class LLMConfig(BaseModel):
+    """Configuration for LLM-based extraction.
+    
+    This model defines the configuration parameters for LLM-based extraction,
+    including provider settings, model selection, and processing parameters.
+    """
+    provider: str = Field(
+        ...,
+        description="LLM provider (e.g., 'openai', 'anthropic', 'openrouter')",
+        example="openrouter"
+    )
+    model: str = Field(
+        ...,
+        description="Model identifier for the LLM provider",
+        example="anthropic/claude-3.5-sonnet"
+    )
+    api_key: str = Field(
+        ...,
+        description="API key for the LLM provider",
+        example="your-api-key"
+    )
+    temperature: float = Field(
+        default=0.1,
+        description="Temperature for LLM generation (0.0 to 1.0)",
+        ge=0.0,
+        le=1.0
+    )
+    max_tokens: int = Field(
+        default=4000,
+        description="Maximum tokens for LLM response",
+        gt=0,
+        le=8000
+    )
+    timeout: int = Field(
+        default=30,
+        description="Timeout in seconds for LLM requests",
+        gt=0,
+        le=300
+    )
+
 class TestURLRequest(BaseModel):
     """Model for testing URL extraction capabilities.
     
@@ -1922,6 +1962,27 @@ class TestURLRequest(BaseModel):
         description="Custom extraction instructions for this test",
         example="Extract title, content, author, and publication date. Include sentiment analysis and identify key price mentions.",
         max_length=2000
+    )
+    
+    # LLM configuration for LLM-based extraction
+    llm_config: Optional[LLMConfig] = Field(
+        default=None,
+        description="LLM configuration for AI-based extraction"
+    )
+    
+    # Extraction instruction for LLM
+    instruction: Optional[str] = Field(
+        default=None,
+        description="Extraction instruction for LLM-based extraction",
+        example="Extract the main content and key information from this webpage.",
+        max_length=2000
+    )
+    
+    # JSON schema for structured extraction
+    schema: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Optional JSON schema for structured extraction",
+        example={"title": "string", "content": "string", "author": "string"}
     )
 
 

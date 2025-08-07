@@ -10,6 +10,7 @@ and data extraction optimized for cryptocurrency content.
 from typing import Dict, List, Optional, Union
 from datetime import datetime
 import asyncio
+import os
 
 # Import from crawl4ai library
 from crawl4ai import AsyncWebCrawler
@@ -115,18 +116,22 @@ class CryptoCrawler:
         try:
             # Use Crawl4AI to crawl the website with async context manager
             async with self.crawler as crawler:
-                # Use the arun method with parameters directly supported by the library
+                # Import required classes from crawl4ai 0.7.0
+                from crawl4ai import CrawlerRunConfig, CacheMode
+                
+                # Create crawler run config for crawl4ai 0.7.0
+                run_config = CrawlerRunConfig(
+                    cache_mode=CacheMode.BYPASS if self.bypass_cache else CacheMode.ENABLED,
+                    word_count_threshold=self.word_count_threshold,
+                    page_timeout=30000,  # 30 seconds in milliseconds
+                    exclude_all_images=not self.extract_images,  # Invert logic for crawl4ai 0.7.0
+                    screenshot=self.capture_screenshot
+                )
+                
+                # Use the arun method with config object for crawl4ai 0.7.0
                 crawl_result = await crawler.arun(
                     url=url,
-                    bypass_cache=self.bypass_cache,
-                    verbose=True,
-                    user_agent=self.user_agent,
-                    headless=self.headless,
-                    word_count_threshold=self.word_count_threshold,
-                    chunking_strategy=RegexChunking(),
-                    screenshot=self.capture_screenshot,
-                    # Pass extract_images as a keyword argument
-                    **({'extract_images': self.extract_images} if self.extract_images else {})
+                    config=run_config
                 )
             
             # Extract the markdown content
@@ -460,86 +465,250 @@ class GenericAsyncCrawler:
         defaults.update(config)
         return defaults
     
-    async def test_url_with_llm(self, url: str, instruction: str, schema: Optional[Dict] = None) -> Dict:
-        """Test URL with LLM-based extraction"""
+    async def test_url_with_llm(self, url: str, instruction: str, schema: Optional[Dict] = None, 
+                               provider: str = "openai", model: str = None, api_key: str = None,
+                               temperature: float = 0.1, max_tokens: int = 4000, timeout: int = 30) -> Dict:
+        """Test URL with LLM-based extraction using crawl4AI LLMExtractionStrategy"""
         import time
+        import logging
+        from datetime import datetime
+        
+        logger = logging.getLogger(__name__)
         start_time = time.time()
         
+        logger.info(f"Starting LLM test for URL: {url}")
+        logger.debug(f"LLM parameters - Provider: {provider}, Model: {model}, Temperature: {temperature}, Max tokens: {max_tokens}, Timeout: {timeout}")
+        
         try:
-            # Perform basic crawl
-            result = await self._perform_basic_crawl(url)
+            # Perform basic crawl first
+            logger.info("Performing basic crawl...")
+            crawl_result = await self._perform_basic_crawl(url)
+            logger.info(f"Basic crawl completed. Success: {crawl_result.get('success', False)}")
             
-            response_time = time.time() - start_time
+            if not crawl_result.get("success", False):
+                error_msg = f"Basic crawl failed for {url}"
+                logger.error(error_msg)
+                return {
+                    "url": url,
+                    "success": False,
+                    "error": error_msg,
+                    "response_time": time.time() - start_time,
+                    "timestamp": datetime.now().isoformat()
+                }
             
-            if result.get("success", False):
+            # Initialize LLM extraction strategy
+            logger.info("Initializing LLM extraction strategy...")
+            try:
+                # Import the LLMExtractionStrategy from crawl4ai library
+                logger.debug("Attempting to import LLMExtractionStrategy...")
+                from crawl4ai.extraction_strategy import LLMExtractionStrategy
+                logger.info("LLMExtractionStrategy imported successfully")
+                
+                # Use provided API key or fall back to config/environment
+                llm_api_key = api_key or self.llm_config.get("api_key") or os.environ.get(f"{provider.upper()}_API_KEY")
+                logger.debug(f"API key check - Provided: {bool(api_key)}, Config: {bool(self.llm_config.get('api_key'))}, Env: {bool(os.environ.get(f'{provider.upper()}_API_KEY'))}")
+                
+                if not llm_api_key:
+                    error_msg = f"No API key provided for {provider}. Checked: provided key, config, and {provider.upper()}_API_KEY environment variable"
+                    logger.error(error_msg)
+                    return {
+                        "url": url,
+                        "success": False,
+                        "error": error_msg,
+                        "response_time": time.time() - start_time,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                
+                # Create LLM extraction strategy
+                model_to_use = model or self.llm_config.get("model")
+                logger.info(f"Creating LLM extraction strategy with model: {model_to_use}")
+                
+                # Import required classes from crawl4ai 0.7.0
+                from crawl4ai import LLMConfig, CrawlerRunConfig, CacheMode
+                
+                # Create LLMConfig object
+                llm_config = LLMConfig(
+                    provider=provider,
+                    api_token=llm_api_key
+                )
+                
+                # Create LLM extraction strategy with LLMConfig
+                llm_strategy = LLMExtractionStrategy(
+                    llm_config=llm_config,
+                    instruction=instruction,
+                    schema=schema,
+                    extraction_type="schema" if schema else "block"
+                )
+                logger.info("LLM extraction strategy created successfully")
+                
+                # Create crawler run config with the extraction strategy
+                run_config = CrawlerRunConfig(
+                    cache_mode=CacheMode.BYPASS,
+                    extraction_strategy=llm_strategy
+                )
+                
+                # Re-crawl with LLM extraction strategy
+                logger.info("Starting LLM extraction crawl...")
+                async with AsyncWebCrawler() as llm_crawler:
+                    llm_crawl_result = await llm_crawler.arun(
+                        url=url,
+                        config=run_config
+                    )
+                
+                if not llm_crawl_result.success:
+                    raise Exception(f"LLM crawl failed: {llm_crawl_result.error_message}")
+                
+                # Extract the result from the crawl
+                llm_result = llm_crawl_result.extracted_content
+                logger.info(f"LLM extraction completed. Result type: {type(llm_result)}")
+                logger.debug(f"LLM result preview: {str(llm_result)[:200]}...")
+                
+                response_time = time.time() - start_time
+                
                 return {
                     "url": url,
                     "success": True,
                     "data": {
-                        "title": result.get("title", ""),
-                        "content": result.get("content", ""),
-                        "markdown": result.get("markdown", ""),
-                        "llm_extraction": {},
-                        "metadata": result.get("metadata", {})
+                        "title": llm_crawl_result.metadata.get("title", "") if llm_crawl_result.metadata else "",
+                        "content": llm_crawl_result.cleaned_html or "",
+                        "markdown": llm_crawl_result.markdown or "",
+                        "llm_extraction": llm_result,
+                        "metadata": {
+                            "status_code": llm_crawl_result.status_code,
+                            "provider": provider,
+                            "model": model or self.llm_config.get("model"),
+                            "extraction_strategy": "LLMExtractionStrategy"
+                        }
                     },
                     "response_time": response_time,
                     "timestamp": datetime.now().isoformat()
                 }
-            else:
+                
+            except ImportError as e:
+                error_msg = f"LLMExtractionStrategy not available: {str(e)}"
+                logger.error(error_msg, exc_info=True)
                 return {
                     "url": url,
                     "success": False,
-                    "error": "Crawl failed",
-                    "response_time": response_time,
+                    "error": error_msg,
+                    "response_time": time.time() - start_time,
+                    "timestamp": datetime.now().isoformat()
+                }
+            except Exception as e:
+                error_msg = f"LLM extraction failed: {str(e)}"
+                logger.error(error_msg, exc_info=True)
+                logger.error(f"Exception type: {type(e).__name__}")
+                logger.error(f"Exception args: {e.args}")
+                return {
+                    "url": url,
+                    "success": False,
+                    "error": error_msg,
+                    "response_time": time.time() - start_time,
                     "timestamp": datetime.now().isoformat()
                 }
                 
         except Exception as e:
+            error_msg = f"Overall crawl process failed: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            logger.error(f"Exception type: {type(e).__name__}")
+            logger.error(f"Exception args: {e.args}")
             return {
                 "url": url,
                 "success": False,
-                "error": str(e),
+                "error": error_msg,
                 "response_time": time.time() - start_time,
                 "timestamp": datetime.now().isoformat()
             }
     
     async def _perform_basic_crawl(self, url: str) -> Dict:
         """Perform basic crawling using Crawl4AI or fallback method."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"Starting basic crawl for URL: {url}")
+        
         if AsyncWebCrawler and self.crawler:
+            logger.info("Using Crawl4AI for crawling")
             try:
-                result = await self.crawler.arun(
-                    url=url,
+                # Import required classes from crawl4ai 0.7.0
+                from crawl4ai import CrawlerRunConfig, CacheMode
+                
+                # Create crawler run config for basic crawling
+                run_config = CrawlerRunConfig(
+                    cache_mode=CacheMode.BYPASS,
                     word_count_threshold=10,
-                    bypass_cache=False,
-                    delay_before_return_html=self.config["delay_before_return_html"]
+                    page_timeout=self.config.get("delay_before_return_html", 5) * 1000  # Convert to milliseconds
                 )
                 
-                return {
+                logger.debug(f"Crawl4AI parameters - word_count_threshold: 10, cache_mode: BYPASS, page_timeout: {run_config.page_timeout}ms")
+                result = await self.crawler.arun(
+                    url=url,
+                    config=run_config
+                )
+                
+                logger.info(f"Crawl4AI completed. Success: {result.success}, Status: {result.status_code}")
+                logger.debug(f"Content lengths - HTML: {len(result.html) if result.html else 0}, Cleaned: {len(result.cleaned_html) if result.cleaned_html else 0}, Markdown: {len(result.markdown) if result.markdown else 0}")
+                
+                crawl_result = {
                     "html": result.html,
                     "cleaned_html": result.cleaned_html,
                     "markdown": result.markdown,
-                    "title": result.metadata.get("title", "Untitled"),
+                    "title": result.metadata.get("title", "Untitled") if result.metadata else "Untitled",
                     "success": result.success,
                     "status_code": result.status_code
                 }
+                
+                if not result.success:
+                    logger.warning(f"Crawl4AI reported failure for {url}. Status code: {result.status_code}")
+                
+                return crawl_result
+                
             except Exception as e:
-                print(f"Crawl4AI failed for {url}, using fallback: {e}")
+                logger.error(f"Crawl4AI failed for {url}, using fallback: {e}", exc_info=True)
+                logger.error(f"Exception type: {type(e).__name__}")
+        else:
+            logger.info("Crawl4AI not available, using fallback method")
+            logger.debug(f"AsyncWebCrawler available: {bool(AsyncWebCrawler)}, Crawler initialized: {bool(self.crawler)}")
         
         # Fallback method for development/testing
+        logger.info("Using fallback crawl method")
         return await self._fallback_crawl(url)
     
     async def _fallback_crawl(self, url: str) -> Dict:
         """Fallback crawling method when Crawl4AI is not available."""
+        import logging
         from urllib.parse import urlparse
         
-        return {
-            "html": f"<html><head><title>Content from {url}</title></head><body><h1>Sample Content</h1><p>This is sample content from {url} for development purposes.</p></body></html>",
-            "cleaned_html": f"Sample Content\n\nThis is sample content from {url} for development purposes.",
-            "markdown": f"# Sample Content\n\nThis is sample content from {url} for development purposes.",
-            "title": f"Content from {urlparse(url).netloc}",
-            "success": True,
-            "status_code": 200
-        }
+        logger = logging.getLogger(__name__)
+        logger.info(f"Using fallback crawl for URL: {url}")
+        
+        try:
+            parsed_url = urlparse(url)
+            domain = parsed_url.netloc
+            logger.debug(f"Parsed domain: {domain}")
+            
+            fallback_result = {
+                "html": f"<html><head><title>Content from {url}</title></head><body><h1>Sample Content</h1><p>This is sample content from {url} for development purposes.</p></body></html>",
+                "cleaned_html": f"Sample Content\n\nThis is sample content from {url} for development purposes.",
+                "markdown": f"# Sample Content\n\nThis is sample content from {url} for development purposes.",
+                "title": f"Content from {domain}",
+                "success": True,
+                "status_code": 200
+            }
+            
+            logger.info("Fallback crawl completed successfully")
+            return fallback_result
+            
+        except Exception as e:
+            logger.error(f"Even fallback crawl failed for {url}: {e}", exc_info=True)
+            return {
+                "html": "",
+                "cleaned_html": "",
+                "markdown": "",
+                "title": "Error",
+                "success": False,
+                "status_code": 500
+            }
     
     async def initialize(self):
         """Initialize the enhanced crawler with Crawl4AI setup."""
@@ -548,11 +717,17 @@ class GenericAsyncCrawler:
         
         try:
             if AsyncWebCrawler:
-                self.crawler = AsyncWebCrawler(
-                    headless=self.config["headless"],
-                    verbose=self.config["verbose"],
-                    user_agent=self.config["user_agent"]
+                # Import BrowserConfig from crawl4ai 0.7.0
+                from crawl4ai import BrowserConfig
+                
+                # Create browser config
+                browser_config = BrowserConfig(
+                    headless=self.config.get("headless", True),
+                    verbose=self.config.get("verbose", False),
+                    user_agent=self.config.get("user_agent", "CryptoCrawler/1.0")
                 )
+                
+                self.crawler = AsyncWebCrawler(config=browser_config)
                 await self.crawler.start()
             
             self.initialized = True

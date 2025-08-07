@@ -98,7 +98,7 @@ def setup_url_mapping_routes(url_mappings_db: URLMappingsDatabase, url_configura
         ```
     """
     # Initialize router with prefix and tags for OpenAPI documentation
-    router = APIRouter(prefix="/api/url-mappings", tags=["URL Mappings"])
+    router = APIRouter(prefix="/url-mappings", tags=["URL Mappings"])
     
     # Dependencies to get database instances
     def get_mappings_db() -> URLMappingsDatabase:
@@ -373,16 +373,25 @@ def setup_url_mapping_routes(url_mappings_db: URLMappingsDatabase, url_configura
         """
         try:
             logger.info(f"Updating URL mapping {mapping_id}")
+            logger.info(f"Update request data: {mapping.dict()}")
             
             # Check if mapping exists
             existing_mapping = await mappings_db.get_mapping(mapping_id)
             if not existing_mapping:
                 raise HTTPException(status_code=404, detail=f"URL mapping {mapping_id} not found")
             
+            logger.info(f"Existing mapping url_config_id: {existing_mapping.get('url_config_id')}")
+            if mapping.url_config_id is not None:
+                logger.info(f"New url_config_id to update: {mapping.url_config_id}")
+            
             # Prepare update data
             update_data = {}
             if mapping.name is not None:
                 update_data['name'] = mapping.name
+            if mapping.url_config_id is not None:
+                update_data['url_config_id'] = mapping.url_config_id
+            if mapping.url is not None:
+                update_data['url'] = mapping.url
             if mapping.extractor_ids is not None:
                 update_data['extractor_ids'] = mapping.extractor_ids
             if mapping.rate_limit is not None:
@@ -403,6 +412,7 @@ def setup_url_mapping_routes(url_mappings_db: URLMappingsDatabase, url_configura
                 update_data['category'] = mapping.category
             
             # Update the mapping
+            logger.info(f"Updating mapping with data: {update_data}")
             update_success = await mappings_db.update_mapping(mapping_id, **update_data)
             
             if not update_success:
@@ -412,6 +422,9 @@ def setup_url_mapping_routes(url_mappings_db: URLMappingsDatabase, url_configura
             updated_mapping = await mappings_db.get_mapping(mapping_id)
             if not updated_mapping:
                 raise HTTPException(status_code=500, detail="Failed to retrieve updated mapping")
+            
+            logger.info(f"Updated mapping url_config_id: {updated_mapping.get('url_config_id')}")
+            logger.info(f"Updated mapping data: {updated_mapping}")
             
             logger.info(f"Updated URL mapping: {mapping_id}")
             return URLMappingResponse(

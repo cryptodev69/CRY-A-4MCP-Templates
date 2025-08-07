@@ -21,6 +21,8 @@ Version: 1.0.0
 
 import os
 import re
+import ast
+import json
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException
 import logging
@@ -28,13 +30,63 @@ import logging
 from ..models import ExtractorResponse
 
 # Initialize FastAPI router with prefix and tags for API organization
-router = APIRouter(prefix="/api/extractors", tags=["Extractors"])
+router = APIRouter(prefix="/extractors", tags=["Extractors"])
 
 # Configure module-level logger for debugging and monitoring
 logger = logging.getLogger(__name__)
 
 
-def discover_real_strategies() -> List[Dict[str, str]]:
+def parse_python_dict_to_json(dict_str: str) -> str:
+    """Parse Python dictionary syntax and convert to JSON format.
+    
+    Args:
+        dict_str (str): String containing Python dictionary syntax
+        
+    Returns:
+        str: JSON formatted string
+    """
+    try:
+        # Remove outer braces if present and add them back
+        dict_str = dict_str.strip()
+        if not dict_str.startswith('{'):
+            dict_str = '{' + dict_str + '}'
+        
+        # Parse the Python dictionary syntax
+        parsed_dict = ast.literal_eval(dict_str)
+        
+        # Convert to JSON string
+        return json.dumps(parsed_dict, indent=2)
+    except (ValueError, SyntaxError) as e:
+        logger.warning(f"Failed to parse dictionary string: {e}")
+        return dict_str  # Return original if parsing fails
+
+
+def parse_python_dict_to_object(dict_str: str) -> dict:
+    """Parse Python dictionary syntax and return as dictionary object.
+    
+    Args:
+        dict_str (str): String containing Python dictionary syntax
+        
+    Returns:
+        dict: Parsed dictionary object
+    """
+    try:
+        # Remove outer braces if present and add them back
+        dict_str = dict_str.strip()
+        if not dict_str.startswith('{'):
+            dict_str = '{' + dict_str + '}'
+        
+        # Parse the Python dictionary syntax
+        parsed_dict = ast.literal_eval(dict_str)
+        
+        # Return the actual dictionary object
+        return parsed_dict
+    except (ValueError, SyntaxError) as e:
+        logger.warning(f"Failed to parse dictionary string: {e}")
+        return {}  # Return empty dict if parsing fails
+
+
+def discover_real_strategies() -> List[Dict[str, Any]]:
     """Dynamically discover extraction strategies from the filesystem.
     
     This function performs a comprehensive scan of the extraction strategies directory
@@ -75,7 +127,7 @@ def discover_real_strategies() -> List[Dict[str, str]]:
         instructions attributes defined as string literals.
     """
     # Initialize empty list to collect discovered strategies
-    strategies: List[Dict[str, str]] = []
+    strategies: List[Dict[str, Any]] = []
     
     # Construct path to extraction strategies directory
     # Navigate to the main project's extraction strategies location
@@ -135,28 +187,98 @@ def discover_real_strategies() -> List[Dict[str, str]]:
                     for class_name in class_matches:
                         logger.debug(f"Found strategy class: {class_name} in {filename}")
                         
+                        # Filter out base classes, error classes, and other non-extractors
+                        excluded_classes = {
+                            'ExtractionStrategy',  # Base class
+                            'LLMExtractionStrategy',  # Base class
+                            'CompositeExtractionStrategy',  # Base class
+                            'ExtractionError',  # Error class
+                            'APIConnectionError',  # Error class
+                            'APIResponseError',  # Error class
+                            'ContentParsingError',  # Error class
+                            'ComprehensiveLLMExtractionStrategy',  # Composite strategy without schema
+                            'SequentialLLMExtractionStrategy'  # Composite strategy without schema
+                        }
+                        
+                        if class_name in excluded_classes:
+                            logger.debug(f"Skipping excluded class: {class_name}")
+                            continue
+                        
                         # Initialize metadata fields with empty defaults
                         schema = ""
                         instructions = ""
                         
                         # Extract schema definition using regex - look for complex schema objects
-                        schema_match = re.search(
-                            r'(\w+_schema)\s*=\s*\{(.+?)\}', 
+                        # First try to find schemas defined within __init__ methods
+                        init_schema_match = re.search(
+                            rf'def\s+__init__.*?(\w+_schema)\s*=\s*\{{(.+?)\}}', 
                             content, 
                             re.DOTALL
                         )
-                        if schema_match:
-                            schema = f"{{{schema_match.group(2)}}}"
-                            logger.debug(f"Extracted schema for {class_name}: {schema[:100]}...")
+                        if init_schema_match:
+                            raw_schema = f"{{{init_schema_match.group(2)}}}"
+                            schema = parse_python_dict_to_object(raw_schema)
+                            logger.debug(f"Extracted __init__ schema for {class_name}: {str(schema)[:100]}...")
                         else:
-                            # Fallback to simple string schema
-                            simple_schema_match = re.search(
-                                r'schema\s*=\s*["\'](.+?)["\']', 
+                            # Try to find class-level SCHEMA attribute with improved pattern
+                            # This pattern handles nested dictionaries and arrays better
+                            class_schema_match = re.search(
+                                r'SCHEMA\s*=\s*\{([^{}]*(?:\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}[^{}]*)*)\}', 
                                 content, 
                                 re.DOTALL
                             )
-                            if simple_schema_match:
-                                schema = simple_schema_match.group(1).strip()
+                            if not class_schema_match:
+                                # Fallback to simpler pattern for deeply nested structures
+                                schema_start = content.find('SCHEMA = {')
+                                if schema_start != -1:
+                                    # Find the matching closing brace
+                                    brace_count = 0
+                                    start_pos = schema_start + len('SCHEMA = ')
+                                    end_pos = start_pos
+                                    
+                                    for i, char in enumerate(content[start_pos:], start_pos):
+                                        if char == '{':
+                                            brace_count += 1
+                                        elif char == '}':
+                                            brace_count -= 1
+                                            if brace_count == 0:
+                                                end_pos = i + 1
+                                                break
+                                    
+                                    if brace_count == 0:
+                                        raw_schema = content[start_pos:end_pos]
+                                        schema = parse_python_dict_to_object(raw_schema)
+                                        logger.debug(f"Extracted class-level SCHEMA for {class_name}: {str(schema)[:100]}...")
+                            else:
+                                raw_schema = f"{{{class_schema_match.group(1)}}}"
+                                schema = parse_python_dict_to_object(raw_schema)
+                                logger.debug(f"Extracted class-level SCHEMA for {class_name}: {str(schema)[:100]}...")
+                            
+                            if not schema:
+                                # Fallback to module-level schema definitions
+                                schema_match = re.search(
+                                    r'(\w+_schema)\s*=\s*\{(.+?)\}', 
+                                    content, 
+                                    re.DOTALL
+                                )
+                                if schema_match:
+                                    raw_schema = f"{{{schema_match.group(2)}}}"
+                                    schema = parse_python_dict_to_object(raw_schema)
+                                    logger.debug(f"Extracted module-level schema for {class_name}: {str(schema)[:100]}...")
+                                else:
+                                    # Final fallback to simple string schema
+                                    simple_schema_match = re.search(
+                                        r'schema\s*=\s*["\'](.+?)["\']', 
+                                        content, 
+                                        re.DOTALL
+                                    )
+                                    if simple_schema_match:
+                                        schema = simple_schema_match.group(1).strip()
+                        
+                        # Only include strategies that have schemas (legitimate extractors)
+                        if not schema:
+                            logger.debug(f"Skipping {class_name} - no schema found")
+                            continue
                         
                         # Extract instructions from class docstring
                         docstring_match = re.search(

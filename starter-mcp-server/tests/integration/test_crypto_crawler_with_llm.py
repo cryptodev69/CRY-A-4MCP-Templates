@@ -8,11 +8,11 @@ from datetime import datetime
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
-from cry_a_4mcp.crawl4ai.crawler import CryptoCrawler
-from cry_a_4mcp.crawl4ai.models import CrawlResult
+from cry_a_4mcp.crypto_crawler.crawler import CryptoCrawler
+from cry_a_4mcp.crypto_crawler.models import CrawlResult
 on
-# Import LLMExtractionStrategy from cry_a_4mcp.crawl4ai
-from cry_a_4mcp.crawl4ai.extraction_strategy import LLMExtractionStrategy
+# Import LLMExtractionStrategy from crawl4ai library
+from crawl4ai.extraction_strategy import LLMExtractionStrategy
 
 
 class CryptoLLMExtractionStrategy(LLMExtractionStrategy):

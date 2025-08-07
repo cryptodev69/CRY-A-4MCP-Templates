@@ -38,20 +38,20 @@ from fastapi import APIRouter, HTTPException, Query
 # Python logging module for structured application logging
 import logging
 
-# Internal database layer for URL configuration persistence
-from ...storage.url_configuration_db import URLConfigurationDatabase
+# Internal database layer for crawler configuration persistence
+from ...storage.crawler_db import CrawlerDatabase
 
 # Pydantic models for request/response validation and serialization
 from ..models import CrawlerConfigCreate, CrawlerConfigUpdate, CrawlerConfigResponse
 
 # FastAPI router instance with URL prefix and OpenAPI tags for documentation
-router = APIRouter(prefix="/api/crawlers", tags=["Crawlers"])
+router = APIRouter(prefix="/crawlers", tags=["Crawlers"])
 
 # Module-level logger for tracking API operations and debugging
 logger = logging.getLogger(__name__)
 
 
-def setup_crawler_routes(url_db: URLConfigurationDatabase):
+def setup_crawler_routes(crawler_db: CrawlerDatabase):
     """Configure and register all crawler-related API endpoints.
     
     This function sets up the complete set of RESTful API endpoints for managing
@@ -64,7 +64,7 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
     simplifies testing and maintenance.
     
     Args:
-        url_db (URLConfigurationDatabase): The database instance for crawler configuration
+        crawler_db (CrawlerDatabase): The database instance for crawler configuration
             persistence. Must be properly initialized and connected before passing
             to this function.
     
@@ -77,8 +77,8 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             endpoint handlers may raise HTTPException for various error conditions.
     
     Example:
-        >>> from cry_a_4mcp.storage.url_configuration_db import URLConfigurationDatabase
-        >>> db = URLConfigurationDatabase("sqlite:///crawlers.db")
+        >>> from cry_a_4mcp.storage.crawler_db import CrawlerDatabase
+        >>> db = CrawlerDatabase("sqlite:///crawlers.db")
         >>> router = setup_crawler_routes(db)
         >>> app.include_router(router)
     
@@ -137,9 +137,14 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             # Calculate database offset for pagination (zero-based indexing)
             offset = (page - 1) * limit
             
-            # Retrieve paginated crawler data from database
-            # This performs the primary data fetch with database-level pagination
-            crawlers = await url_db.get_crawlers_paginated(offset=offset, limit=limit)
+            # Retrieve all crawler data from database
+            # Note: Implementing basic pagination by getting all and slicing
+            all_crawlers = await crawler_db.get_all_crawlers()
+            
+            # Apply pagination manually
+            start_idx = offset
+            end_idx = offset + limit
+            crawlers = all_crawlers[start_idx:end_idx]
             
             # Apply client-side status filtering if specified
             # Note: This filtering happens after pagination, which may reduce result count
@@ -162,7 +167,7 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             raise HTTPException(status_code=500, detail=str(e))
     
     @router.get("/{crawler_id}", response_model=CrawlerConfigResponse)
-    async def get_crawler(crawler_id: int):
+    async def get_crawler(crawler_id: str):
         """Retrieve a specific crawler configuration by its unique identifier.
         
         This endpoint fetches detailed information about a single crawler configuration
@@ -199,7 +204,7 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             logger.info(f"Retrieving crawler configuration for ID: {crawler_id}")
             
             # Attempt to fetch the crawler from the database
-            crawler = await url_db.get_crawler(crawler_id)
+            crawler = await crawler_db.get_crawler(crawler_id)
             
             # Check if the crawler exists and return appropriate error if not found
             if not crawler:
@@ -270,12 +275,12 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             logger.debug(f"Crawler data prepared for creation: {crawler_data}")
             
             # Create the crawler record in the database and get the new ID
-            crawler_id = await url_db.create_crawler(crawler_data)
+            crawler_id = await crawler_db.create_crawler(crawler_data)
             logger.info(f"Crawler created successfully with ID: {crawler_id}")
             
             # Retrieve the complete created crawler to return to client
             # This ensures the response includes all computed fields and defaults
-            created_crawler = await url_db.get_crawler(crawler_id)
+            created_crawler = await crawler_db.get_crawler(crawler_id)
             
             if not created_crawler:
                 # This should not happen but provides safety check
@@ -292,7 +297,7 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             raise HTTPException(status_code=500, detail=str(e))
     
     @router.put("/{crawler_id}", response_model=CrawlerConfigResponse)
-    async def update_crawler(crawler_id: int, crawler: CrawlerConfigUpdate):
+    async def update_crawler(crawler_id: str, crawler: CrawlerConfigUpdate):
         """Update an existing crawler configuration with partial or complete data.
         
         This endpoint allows modification of an existing crawler configuration using
@@ -339,7 +344,7 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             
             # Verify the crawler exists before attempting update
             # This provides early validation and better error messages
-            existing_crawler = await url_db.get_crawler(crawler_id)
+            existing_crawler = await crawler_db.get_crawler(crawler_id)
             if not existing_crawler:
                 logger.warning(f"Attempted to update non-existent crawler {crawler_id}")
                 raise HTTPException(status_code=404, detail="Crawler not found")
@@ -352,7 +357,7 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             logger.debug(f"Update data prepared: {update_data}")
             
             # Perform the database update operation
-            success = await url_db.update_crawler(crawler_id, update_data)
+            success = await crawler_db.update_crawler(crawler_id, update_data)
             if not success:
                 # This should not happen given the existence check above
                 logger.error(f"Database update failed for crawler {crawler_id}")
@@ -362,7 +367,7 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             
             # Retrieve and return the complete updated configuration
             # This ensures the client receives all current values
-            updated_crawler = await url_db.get_crawler(crawler_id)
+            updated_crawler = await crawler_db.get_crawler(crawler_id)
             
             if not updated_crawler:
                 # Safety check - should not happen but provides robustness
@@ -382,7 +387,7 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             raise HTTPException(status_code=500, detail=str(e))
     
     @router.delete("/{crawler_id}")
-    async def delete_crawler(crawler_id: int):
+    async def delete_crawler(crawler_id: str):
         """Permanently delete a crawler configuration from the system.
         
         This endpoint removes a crawler configuration and all associated data from
@@ -427,7 +432,7 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             
             # Attempt to delete the crawler from the database
             # The database layer handles the actual existence check
-            success = await url_db.delete_crawler(crawler_id)
+            success = await crawler_db.delete_crawler(crawler_id)
             
             # Check if the deletion was successful
             if not success:
@@ -451,7 +456,7 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             raise HTTPException(status_code=500, detail=str(e))
     
     @router.post("/{crawler_id}/toggle-status")
-    async def toggle_crawler_status(crawler_id: int):
+    async def toggle_crawler_status(crawler_id: str):
         """Toggle crawler status between active and inactive states.
         
         This endpoint provides a convenient way to switch a crawler's operational
@@ -498,7 +503,7 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             logger.info(f"Toggling status for crawler: {crawler_id}")
             
             # Retrieve the current crawler configuration to check existence and status
-            crawler = await url_db.get_crawler(crawler_id)
+            crawler = await crawler_db.get_crawler(crawler_id)
             if not crawler:
                 logger.warning(f"Attempted to toggle status of non-existent crawler {crawler_id}")
                 raise HTTPException(status_code=404, detail="Crawler not found")
@@ -513,7 +518,7 @@ def setup_crawler_routes(url_db: URLConfigurationDatabase):
             logger.info(f"Changing crawler {crawler_id} status from '{current_status}' to '{new_status}'")
             
             # Apply the status update to the database
-            success = await url_db.update_crawler(crawler_id, {'status': new_status})
+            success = await crawler_db.update_crawler(crawler_id, {'status': new_status})
             if not success:
                 # This should not happen given the existence check above
                 logger.error(f"Failed to update status for crawler {crawler_id}")

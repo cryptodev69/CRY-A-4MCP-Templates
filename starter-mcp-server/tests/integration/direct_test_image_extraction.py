@@ -7,8 +7,8 @@ import base64
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
 # Direct import of the crawler module
-from cry_a_4mcp.crawl4ai.crawler import CryptoCrawler
-from cry_a_4mcp.crawl4ai.models import CrawlResult
+from cry_a_4mcp.crypto_crawler.crawler import CryptoCrawler
+from cry_a_4mcp.crypto_crawler.models import CrawlResult
 
 
 async def test_image_extraction():

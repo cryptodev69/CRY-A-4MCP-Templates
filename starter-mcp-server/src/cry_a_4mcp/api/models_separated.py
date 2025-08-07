@@ -358,6 +358,7 @@ class URLMappingUpdate(BaseModel):
     Only includes technical fields.
     """
     name: Optional[str] = Field(default=None, description="Name/title of the mapping")
+    url: Optional[str] = Field(default=None, description="URL for this mapping")
     url_config_id: Optional[str] = Field(default=None)
     extractor_ids: Optional[List[str]] = Field(default=None, min_items=1)
     rate_limit: Optional[int] = Field(default=None, ge=1)

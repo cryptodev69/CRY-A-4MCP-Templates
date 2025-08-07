@@ -19,13 +19,12 @@ import uvicorn
 
 from .database import init_db, db_manager
 from .cry_a_4mcp.api.endpoints.url_mappings import setup_url_mapping_routes
-
-# Setup URL mapping routes
-url_mappings_router = setup_url_mapping_routes()
 from .exceptions import URLMappingBaseError
 from .cry_a_4mcp.api.endpoints.extractors import router as extractors_router
+from .cry_a_4mcp.api.endpoints.test_url import router as test_url_router
 from .cry_a_4mcp.api.endpoints.url_configurations import setup_url_configuration_routes
 from .cry_a_4mcp.storage.url_configuration_db import URLConfigurationDatabase
+from .cry_a_4mcp.storage.url_mappings_db import URLMappingsDatabase
 
 
 # Prometheus metrics
@@ -48,8 +47,9 @@ DATABASE_OPERATIONS = Counter(
 )
 
 
-# Initialize URL Configuration Database globally
+# Initialize databases globally
 url_config_db = URLConfigurationDatabase()
+url_mappings_db = URLMappingsDatabase()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -71,6 +71,14 @@ async def lifespan(app: FastAPI):
         print("URL Configuration Database initialized successfully")
     except Exception as e:
         print(f"Failed to initialize URL Configuration Database: {e}")
+        raise
+    
+    # Initialize URL Mappings Database
+    try:
+        await url_mappings_db.initialize()
+        print("URL Mappings Database initialized successfully")
+    except Exception as e:
+        print(f"Failed to initialize URL Mappings Database: {e}")
         raise
     
     # Start Prometheus metrics server if enabled
@@ -144,8 +152,14 @@ async def add_process_time_header(request: Request, call_next):
 
 
 # Include routers
-app.include_router(url_mappings_router)
 app.include_router(extractors_router)
+
+# Include test URL router with /api prefix
+app.include_router(test_url_router, prefix="/api")
+
+# Setup URL mapping routes with database dependencies
+url_mappings_router = setup_url_mapping_routes(url_mappings_db, url_config_db)
+app.include_router(url_mappings_router)
 
 # Setup URL configuration routes with database dependency
 url_config_router = setup_url_configuration_routes(url_config_db)

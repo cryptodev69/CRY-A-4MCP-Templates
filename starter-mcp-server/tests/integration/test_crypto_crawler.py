@@ -5,7 +5,7 @@ import os
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
-from cry_a_4mcp.crawl4ai.crawler import CryptoCrawler
+from cry_a_4mcp.crypto_crawler.crawler import CryptoCrawler
 
 
 async def test_crypto_crawler():
