@@ -46,6 +46,7 @@ from .endpoints.crawl_jobs import setup_crawl_job_routes
 from .endpoints.extractors import router as extractors_router
 from .endpoints.test_url import router as test_url_router
 from .endpoints.openrouter import setup_openrouter_routes
+from .endpoints.adaptive_crawling import setup_adaptive_routes
 
 # Database type imports for type hints
 from ..storage.url_configuration_db import URLConfigurationDatabase
@@ -56,7 +57,7 @@ from ..storage.crawler_db import CrawlerDatabase
 logger = logging.getLogger(__name__)
 
 
-def create_api_router(
+async def create_api_router(
     url_configuration_db: URLConfigurationDatabase,
     url_mappings_db: URLMappingsDatabase,
     crawler_db: CrawlerDatabase,
@@ -142,6 +143,15 @@ def create_api_router(
         crawler = GenericAsyncCrawler()
         crawl_job_router = setup_crawl_job_routes(url_configuration_db, crawler)
         main_router.include_router(crawl_job_router)
+        
+        # Setup adaptive crawling routes
+        logger.debug("Setting up adaptive crawling routes")
+        # Create a CryptoCrawler instance with adaptive capabilities
+        from ..crypto_crawler.crawler import CryptoCrawler
+        crypto_crawler = CryptoCrawler(enable_adaptive_crawling=True)
+        await crypto_crawler.initialize()
+        adaptive_router = setup_adaptive_routes(crypto_crawler)
+        main_router.include_router(adaptive_router)
         
         # Include extractor routes (no setup function needed)
         logger.debug("Including extractor routes")

@@ -14,24 +14,151 @@ import os
 import time
 import logging
 
-# Import from crawl4ai library
+# Core crawl4ai imports with compatibility handling
 try:
-    from crawl4ai import AsyncWebCrawler, LLMConfig, LLMExtractionStrategy, CrawlerRunConfig, CacheMode, BrowserConfig
-    from crawl4ai.chunking_strategy import RegexChunking
-    CRAWL4AI_AVAILABLE = True
-except ImportError as e:
-    print(f"Warning: crawl4ai not available: {e}")
-    AsyncWebCrawler = None
-    LLMConfig = None
-    LLMExtractionStrategy = None
-    CrawlerRunConfig = None
-    CacheMode = None
-    BrowserConfig = None
-    RegexChunking = None
-    CRAWL4AI_AVAILABLE = False
+    # Import basic crawl4ai first to check compatibility
+    import crawl4ai
+    
+    # Try to import core features
+    try:
+        from crawl4ai import AsyncWebCrawler, LLMConfig, LLMExtractionStrategy, CrawlerRunConfig, CacheMode, BrowserConfig
+        from crawl4ai.extraction_strategy import ExtractionStrategy
+        from crawl4ai.chunking_strategy import RegexChunking
+        CRAWL4AI_CORE_AVAILABLE = True
+    except ImportError:
+        # Create fallback classes
+        class AsyncWebCrawler:
+            def __init__(self, **kwargs):
+                self.config = kwargs
+            async def astart(self):
+                pass
+            async def aclose(self):
+                pass
+            async def acrawl(self, url, **kwargs):
+                return type('CrawlResult', (), {'success': False, 'error': 'Crawl4AI not available'})()
+        
+        class LLMConfig:
+            def __init__(self, **kwargs):
+                self.config = kwargs
+        
+        class LLMExtractionStrategy:
+            def __init__(self, **kwargs):
+                self.config = kwargs
+        
+        class CrawlerRunConfig:
+            def __init__(self, **kwargs):
+                self.config = kwargs
+        
+        class CacheMode:
+            ENABLED = "enabled"
+            DISABLED = "disabled"
+        
+        class BrowserConfig:
+            def __init__(self, **kwargs):
+                self.config = kwargs
+        
+        class ExtractionStrategy:
+            def __init__(self, **kwargs):
+                self.config = kwargs
+        
+        class RegexChunking:
+            def __init__(self, **kwargs):
+                self.config = kwargs
+        
+        CRAWL4AI_CORE_AVAILABLE = False
+    
+    # Try to import adaptive features
+    try:
+        from crawl4ai import StatisticalStrategy, EmbeddingStrategy
+        from crawl4ai.adaptive import AdaptiveConfig, AdaptiveCrawlingStrategy
+        CRAWL4AI_ADAPTIVE_AVAILABLE = True
+    except ImportError:
+        # Create fallback classes
+        class StatisticalStrategy:
+            def __init__(self, **kwargs):
+                self.config = kwargs
+        
+        class EmbeddingStrategy:
+            def __init__(self, **kwargs):
+                self.config = kwargs
+        
+        class AdaptiveConfig:
+            def __init__(self, **kwargs):
+                self.config = kwargs
+        
+        class AdaptiveCrawlingStrategy:
+            def __init__(self, **kwargs):
+                self.config = kwargs
+        
+        CRAWL4AI_ADAPTIVE_AVAILABLE = False
+    
+except Exception as e:
+    print(f"Warning: Crawl4AI import failed: {e}")
+    # Create all fallback classes
+    class AsyncWebCrawler:
+        def __init__(self, **kwargs):
+            self.config = kwargs
+        async def astart(self):
+            pass
+        async def aclose(self):
+            pass
+        async def acrawl(self, url, **kwargs):
+            return type('CrawlResult', (), {'success': False, 'error': 'Crawl4AI not available'})()
+    
+    class LLMConfig:
+        def __init__(self, **kwargs):
+            self.config = kwargs
+    
+    class LLMExtractionStrategy:
+        def __init__(self, **kwargs):
+            self.config = kwargs
+    
+    class CrawlerRunConfig:
+        def __init__(self, **kwargs):
+            self.config = kwargs
+    
+    class CacheMode:
+        ENABLED = "enabled"
+        DISABLED = "disabled"
+    
+    class BrowserConfig:
+        def __init__(self, **kwargs):
+            self.config = kwargs
+    
+    class ExtractionStrategy:
+        def __init__(self, **kwargs):
+            self.config = kwargs
+    
+    class RegexChunking:
+        def __init__(self, **kwargs):
+            self.config = kwargs
+    
+    class StatisticalStrategy:
+        def __init__(self, **kwargs):
+            self.config = kwargs
+    
+    class EmbeddingStrategy:
+        def __init__(self, **kwargs):
+            self.config = kwargs
+    
+    class AdaptiveConfig:
+        def __init__(self, **kwargs):
+            self.config = kwargs
+    
+    class AdaptiveCrawlingStrategy:
+        def __init__(self, **kwargs):
+            self.config = kwargs
+    
+    CRAWL4AI_CORE_AVAILABLE = False
+    CRAWL4AI_ADAPTIVE_AVAILABLE = False
+
+# Set legacy compatibility flag
+CRAWL4AI_AVAILABLE = CRAWL4AI_CORE_AVAILABLE
 
 from .models import CrawlResult, CryptoEntity, CryptoTriple, CrawlMetadata
 from .extractors import CryptoEntityExtractor, CryptoTripleExtractor
+from ..services.adaptive_strategy_service import AdaptiveStrategyService
+from ..models.adaptive_models import AdaptiveStrategyConfig, AdaptiveMetrics, LearnedPattern
 
 
 class CryptoCrawler:
@@ -41,14 +168,17 @@ class CryptoCrawler:
     features like token detection, blockchain address recognition, and protocol analysis.
     """
     
-    def __init__(self, config: Optional[Dict] = None, config_file_path: Optional[str] = None):
+    def __init__(self, config: Optional[Dict] = None, config_file_path: Optional[str] = None, **kwargs):
         """Initialize the cryptocurrency crawler.
         
         Args:
             config: Optional configuration dictionary for the crawler
             config_file_path: Optional path to a JSON configuration file
+            **kwargs: Additional keyword arguments (e.g., enable_adaptive_crawling)
         """
         self.config = config or {}
+        # Merge kwargs into config
+        self.config.update(kwargs)
         self.websites = []
         
         # Load configuration from file if provided
@@ -60,6 +190,9 @@ class CryptoCrawler:
         self.initialized = False
         self.crawler = None
         
+        # Initialize adaptive strategy service
+        self.adaptive_service = AdaptiveStrategyService()
+        
         # Get configuration parameters from config if provided
         self.user_agent = self.config.get("user_agent", "CryptoCrawler/1.0")
         self.headless = self.config.get("headless", True)
@@ -67,6 +200,11 @@ class CryptoCrawler:
         self.word_count_threshold = self.config.get("word_count_threshold", 100)
         self.capture_screenshot = self.config.get("capture_screenshot", True)
         self.extract_images = self.config.get("extract_images", True)
+        
+        # Adaptive crawling configuration
+        self.enable_adaptive_crawling = self.config.get("enable_adaptive_crawling", True)
+        self.enable_pattern_learning = self.config.get("enable_pattern_learning", True)
+        self.enable_smart_stopping = self.config.get("enable_smart_stopping", True)
     
     def load_config_from_file(self, file_path: str) -> None:
         """Load configuration from a JSON file.
@@ -417,6 +555,185 @@ class CryptoCrawler:
                 print(f"Error crawling {website.get('name', website.get('url'))}: {str(e)}")
         
         return results
+    
+    async def crawl_with_adaptive_intelligence(self, url: str, strategy_config: Optional[AdaptiveStrategyConfig] = None, **kwargs) -> Dict:
+        """Enhanced crawling with adaptive intelligence features from Crawl4AI v0.7.0.
+        
+        Args:
+            url: The URL to crawl
+            strategy_config: Optional adaptive strategy configuration
+            **kwargs: Additional crawling parameters
+            
+        Returns:
+            Dictionary containing crawl results with adaptive intelligence metadata
+        """
+        if not self.initialized or not self.crawler:
+            raise RuntimeError("Crawler not initialized. Call initialize() first.")
+        
+        start_time = datetime.utcnow()
+        
+        try:
+            # Get optimized strategy for the URL
+            if not strategy_config:
+                strategy_config = await self.adaptive_service.get_optimized_strategy(url)
+            
+            # Create adaptive strategies based on configuration
+            statistical_strategy = None
+            embedding_strategy = None
+            adaptive_config = None
+            
+            if CRAWL4AI_ADAPTIVE_AVAILABLE and StatisticalStrategy and EmbeddingStrategy and AdaptiveConfig:
+                if strategy_config.strategy_type in ['statistical', 'hybrid']:
+                    statistical_strategy = self.adaptive_service.create_statistical_strategy(strategy_config)
+                
+                if strategy_config.strategy_type in ['embedding', 'hybrid']:
+                    embedding_strategy = self.adaptive_service.create_embedding_strategy(strategy_config)
+                
+                adaptive_config = self.adaptive_service.create_adaptive_config(strategy_config)
+            
+            # Configure adaptive crawling strategy
+            adaptive_strategy = None
+            if CRAWL4AI_ADAPTIVE_AVAILABLE and AdaptiveCrawlingStrategy:
+                adaptive_strategy = AdaptiveCrawlingStrategy(
+                    statistical=statistical_strategy,
+                    embedding=embedding_strategy,
+                    adaptive_config=adaptive_config
+                )
+            
+            # Create enhanced crawler run config with valid parameters only
+            run_config = CrawlerRunConfig(
+                disable_cache=self.bypass_cache,
+                word_count_threshold=strategy_config.min_word_count,
+                page_timeout=kwargs.get('page_timeout', 30) * 1000,  # Convert to milliseconds
+                screenshot=kwargs.get('screenshot', self.capture_screenshot),
+                verbose=kwargs.get('verbose', True)
+            )
+            
+            # Perform adaptive crawling
+            async with self.crawler as crawler:
+                result = await crawler.arun(
+                    url=url,
+                    config=run_config
+                )
+            
+            # Calculate processing time
+            processing_time = (datetime.utcnow() - start_time).total_seconds()
+            
+            # Process adaptive results
+            adaptive_metadata = {
+                'patterns_learned': getattr(result, 'patterns_learned', []),
+                'content_quality_score': getattr(result, 'quality_score', 0.0),
+                'adaptation_applied': getattr(result, 'adaptation_applied', False),
+                'stopping_reason': getattr(result, 'stopping_reason', 'manual'),
+                'statistical_metrics': getattr(result, 'statistical_metrics', {}),
+                'strategy_type': strategy_config.strategy_type,
+                'learning_enabled': strategy_config.enable_pattern_learning,
+                'smart_stopping_enabled': strategy_config.enable_smart_stopping
+            }
+            
+            # Create result dictionary
+            crawl_result = {
+                'success': result.success,
+                'url': url,
+                'content': result.markdown if hasattr(result, 'markdown') else '',
+                'metadata': {
+                    **(result.metadata if hasattr(result, 'metadata') and result.metadata else {}),
+                    'adaptive_intelligence': adaptive_metadata,
+                    'extraction_time': processing_time,
+                    'strategy_config': strategy_config.dict()
+                },
+                'extraction_time': processing_time,
+                'screenshot': getattr(result, 'screenshot', None)
+            }
+            
+            # Learn from crawl results if pattern learning is enabled
+            if strategy_config.enable_pattern_learning:
+                await self.adaptive_service.learn_from_crawl_result(url, crawl_result, strategy_config)
+            
+            return crawl_result
+            
+        except Exception as e:
+            processing_time = (datetime.utcnow() - start_time).total_seconds()
+            error_result = {
+                'success': False,
+                'error': str(e),
+                'url': url,
+                'metadata': {
+                    'extraction_time': processing_time,
+                    'error_type': type(e).__name__
+                }
+            }
+            
+            # Still try to learn from failed attempts
+            if strategy_config and strategy_config.enable_pattern_learning:
+                try:
+                    await self.adaptive_service.learn_from_crawl_result(url, error_result, strategy_config)
+                except Exception:
+                    pass  # Don't let learning errors affect the main error response
+            
+            return error_result
+    
+    def get_adaptive_insights(self, domain: str) -> Dict:
+        """Get adaptive crawling insights for a specific domain.
+        
+        Args:
+            domain: Domain to get insights for
+            
+        Returns:
+            Dictionary containing domain insights and recommendations
+        """
+        insights = self.adaptive_service.get_domain_insights(domain)
+        return insights.dict()
+    
+    def get_pattern_analysis(self) -> Dict:
+        """Get comprehensive pattern analysis across all domains.
+        
+        Returns:
+            Dictionary containing pattern analysis and optimization opportunities
+        """
+        if self.adaptive_service is None:
+            return {
+                "total_patterns": 0,
+                "effective_patterns": 0,
+                "pattern_types": {},
+                "domain_coverage": {},
+                "effectiveness_distribution": {},
+                "learning_trends": [],
+                "optimization_opportunities": ["Adaptive service not initialized"]
+            }
+        
+        analysis = self.adaptive_service.get_pattern_analysis()
+        return analysis.dict()
+    
+    def clear_adaptive_cache(self, domain: Optional[str] = None) -> bool:
+        """Clear adaptive learning cache for a domain or all domains.
+        
+        Args:
+            domain: Optional domain to clear cache for. If None, clears all.
+            
+        Returns:
+            True if cache was cleared, False otherwise
+        """
+        if domain:
+            return self.adaptive_service.clear_domain_cache(domain)
+        else:
+            # Clear all domain caches
+            cleared = False
+            for domain in list(self.adaptive_service.strategies_cache.keys()):
+                if self.adaptive_service.clear_domain_cache(domain):
+                    cleared = True
+            return cleared
+    
+    def export_learned_patterns(self, domain: Optional[str] = None) -> Dict:
+        """Export learned patterns for backup or analysis.
+        
+        Args:
+            domain: Optional domain to export patterns for. If None, exports all.
+            
+        Returns:
+            Dictionary containing exported patterns
+        """
+        return self.adaptive_service.export_learned_patterns(domain)
 
 
 class GenericAsyncCrawler:

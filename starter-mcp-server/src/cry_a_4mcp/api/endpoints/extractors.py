@@ -57,7 +57,8 @@ def parse_python_dict_to_json(dict_str: str) -> str:
         # Convert to JSON string
         return json.dumps(parsed_dict, indent=2)
     except (ValueError, SyntaxError) as e:
-        logger.warning(f"Failed to parse dictionary string: {e}")
+        # Use debug level instead of warning to reduce console noise
+        logger.debug(f"Failed to parse dictionary string: {e} - Input: {dict_str[:100]}...")
         return dict_str  # Return original if parsing fails
 
 
@@ -82,7 +83,8 @@ def parse_python_dict_to_object(dict_str: str) -> dict:
         # Return the actual dictionary object
         return parsed_dict
     except (ValueError, SyntaxError) as e:
-        logger.warning(f"Failed to parse dictionary string: {e}")
+        # Use debug level instead of warning to reduce console noise
+        logger.debug(f"Failed to parse dictionary string: {e} - Input: {dict_str[:100]}...")
         return {}  # Return empty dict if parsing fails
 
 

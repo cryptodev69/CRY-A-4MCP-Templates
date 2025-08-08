@@ -317,16 +317,29 @@ class WebAPIServer:
         async def health_check():
             return {"status": "healthy", "service": "cry-a-4mcp-web-api"}
         
-        # Include the modular API router
-        api_router = create_api_router(
-            url_configuration_db=self.url_configuration_db,
-            url_mappings_db=self.url_mappings_db,
-            crawler_db=self.crawler_db,
-            active_jobs=self.active_jobs
-        )
-        self.app.include_router(api_router)
+        # Add direct endpoints for frontend compatibility (without /api prefix)
+        @self.app.get("/url-configurations/")
+        async def get_url_configurations():
+            """Get all URL configurations for frontend compatibility."""
+            try:
+                configs = await self.url_configuration_db.get_all_configurations()
+                return configs
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Failed to retrieve URL configurations: {str(e)}")
         
-        # All API endpoints are now handled by the modular router
+        @self.app.get("/url-mappings/")
+        async def get_url_mappings():
+            """Get all URL mappings for frontend compatibility."""
+            try:
+                mappings = await self.url_mappings_db.get_all_mappings()
+                return mappings
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Failed to retrieve URL mappings: {str(e)}")
+        
+        # Store router setup for later initialization
+        self._api_router_setup_pending = True
+        
+        # All API endpoints will be handled by the modular router after initialization
     
     async def initialize(self):
         """Initializes the web API server's components.
@@ -351,6 +364,18 @@ class WebAPIServer:
             logging.info("Seeded databases with sample data")
         except Exception as e:
             logging.warning(f"Failed to seed sample data: {e}")
+        
+        # Setup API router after database initialization
+        if hasattr(self, '_api_router_setup_pending') and self._api_router_setup_pending:
+            api_router = await create_api_router(
+                url_configuration_db=self.url_configuration_db,
+                url_mappings_db=self.url_mappings_db,
+                crawler_db=self.crawler_db,
+                active_jobs=self.active_jobs
+            )
+            self.app.include_router(api_router)
+            self._api_router_setup_pending = False
+            logging.info("API router with adaptive crawling capabilities initialized")
     
     async def run(self, host: str = "0.0.0.0", port: int = 4000):
         """Runs the FastAPI web server using Uvicorn.

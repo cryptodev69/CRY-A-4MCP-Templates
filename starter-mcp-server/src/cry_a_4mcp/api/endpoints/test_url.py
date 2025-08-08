@@ -16,9 +16,11 @@ Typical usage:
 """
 
 import logging
+import os
+import json
 from typing import Dict, Any, Optional
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
 
 from ..models import TestURLRequest, TestURLResponse
@@ -36,6 +38,32 @@ router = APIRouter(
         500: {"description": "Internal server error"}
     }
 )
+
+
+def load_openrouter_api_key() -> Optional[str]:
+    """Load OpenRouter API key from configuration file.
+    
+    Returns:
+        str: The OpenRouter API key if found, None otherwise
+    """
+    try:
+        # Path to the API keys configuration file
+        config_path = os.path.join(
+            os.path.dirname(__file__),
+            "..", "..", "crawl4ai", "extraction_strategies", "ui", "config", "api_keys.json"
+        )
+        config_path = os.path.abspath(config_path)
+        
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                api_keys = json.load(f)
+                return api_keys.get('openrouter')
+        else:
+            logger.warning(f"API keys configuration file not found at: {config_path}")
+            return None
+    except Exception as e:
+        logger.error(f"Error loading OpenRouter API key: {e}")
+        return None
 
 
 @router.post("", response_model=TestURLResponse)
@@ -154,15 +182,17 @@ async def test_url_extraction(request: TestURLRequest) -> TestURLResponse:
                 logger.info(f"Using LLM-based extraction with provider: {provider}, model: {model_to_use}")
             else:
                 # Fall back to legacy fields for backward compatibility
-                provider = "openai"
-                model_to_use = request.model or "gpt-3.5-turbo"
-                api_key = None
+                provider = "openrouter"  # Default to openrouter instead of openai
+                model_to_use = request.model or "anthropic/claude-3.5-sonnet"
+                api_key = load_openrouter_api_key()  # Load API key from config
                 temperature = 0.1
                 max_tokens = 4000
                 timeout = 30
                 instruction_to_use = request.custom_instructions or "Extract the main content and key information from this webpage."
                 schema_to_use = None
                 logger.info(f"Using legacy LLM-based extraction with model: {model_to_use}")
+                if not api_key:
+                    logger.warning("No OpenRouter API key found in configuration")
             
             logger.debug(f"Extraction instruction: {instruction_to_use[:100]}...")
             
@@ -206,13 +236,16 @@ async def test_url_extraction(request: TestURLRequest) -> TestURLResponse:
             logger.info("Using default LLM-based extraction (no model or extractor specified)")
             try:
                 logger.info("Starting default LLM extraction...")
+                # Load OpenRouter API key
+                openrouter_api_key = load_openrouter_api_key()
+                
                 result = await crawler.test_url_with_llm(
                     url=request.url,
                     instruction="Extract the main content and key information from this webpage.",
                     schema=None,
                     provider="openrouter",
                     model="anthropic/claude-3.5-sonnet",
-                    api_key=None,  # This will need to be configured
+                    api_key=openrouter_api_key,
                     temperature=0.1,
                     max_tokens=4000,
                     timeout=30

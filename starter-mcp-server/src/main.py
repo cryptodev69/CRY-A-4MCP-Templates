@@ -22,7 +22,10 @@ from .cry_a_4mcp.api.endpoints.url_mappings import setup_url_mapping_routes
 from .exceptions import URLMappingBaseError
 from .cry_a_4mcp.api.endpoints.extractors import router as extractors_router
 from .cry_a_4mcp.api.endpoints.test_url import router as test_url_router
+from .cry_a_4mcp.api.endpoints.openrouter import setup_openrouter_routes
 from .cry_a_4mcp.api.endpoints.url_configurations import setup_url_configuration_routes
+from .cry_a_4mcp.api.endpoints.adaptive_crawling import setup_adaptive_routes
+from .cry_a_4mcp.crypto_crawler.crawler import CryptoCrawler
 from .cry_a_4mcp.storage.url_configuration_db import URLConfigurationDatabase
 from .cry_a_4mcp.storage.url_mappings_db import URLMappingsDatabase
 
@@ -50,6 +53,7 @@ DATABASE_OPERATIONS = Counter(
 # Initialize databases globally
 url_config_db = URLConfigurationDatabase()
 url_mappings_db = URLMappingsDatabase()
+crypto_crawler = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -79,6 +83,21 @@ async def lifespan(app: FastAPI):
         print("URL Mappings Database initialized successfully")
     except Exception as e:
         print(f"Failed to initialize URL Mappings Database: {e}")
+        raise
+    
+    # Initialize CryptoCrawler for adaptive crawling
+    try:
+        global crypto_crawler
+        crypto_crawler = CryptoCrawler(config={"enable_adaptive_crawling": True})
+        await crypto_crawler.initialize()
+        print("CryptoCrawler initialized successfully")
+        
+        # Setup adaptive crawling routes after crypto_crawler is initialized
+        adaptive_router = setup_adaptive_routes(crypto_crawler)
+        app.include_router(adaptive_router, prefix="/api")
+        print("Adaptive crawling routes added successfully")
+    except Exception as e:
+        print(f"Failed to initialize CryptoCrawler: {e}")
         raise
     
     # Start Prometheus metrics server if enabled
@@ -152,10 +171,14 @@ async def add_process_time_header(request: Request, call_next):
 
 
 # Include routers
-app.include_router(extractors_router)
+app.include_router(extractors_router, prefix="/api")
 
 # Include test URL router with /api prefix
 app.include_router(test_url_router, prefix="/api")
+
+# Include OpenRouter router with /api prefix
+openrouter_router = setup_openrouter_routes()
+app.include_router(openrouter_router, prefix="/api")
 
 # Setup URL mapping routes with database dependencies
 url_mappings_router = setup_url_mapping_routes(url_mappings_db, url_config_db)
@@ -164,6 +187,10 @@ app.include_router(url_mappings_router)
 # Setup URL configuration routes with database dependency
 url_config_router = setup_url_configuration_routes(url_config_db)
 app.include_router(url_config_router)
+
+# Setup adaptive crawling routes with /api prefix - will be added after initialization
+# adaptive_router = setup_adaptive_routes(crypto_crawler)
+# app.include_router(adaptive_router, prefix="/api")
 
 
 # Root endpoint
