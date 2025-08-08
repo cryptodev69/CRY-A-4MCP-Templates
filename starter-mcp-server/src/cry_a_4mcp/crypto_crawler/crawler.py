@@ -868,12 +868,35 @@ class GenericAsyncCrawler:
                     api_token=llm_api_key
                 )
                 
-                # Create LLM extraction strategy with LLMConfig
+                # Enhance instruction to explicitly request JSON format
+                enhanced_instruction = instruction
+                if schema:
+                    enhanced_instruction = f"""{instruction}
+
+IMPORTANT: You MUST return your response as valid JSON that strictly follows the provided schema. Do not include any explanatory text, markdown formatting, or additional content outside the JSON structure. Return only the JSON object.
+
+Schema to follow:
+{schema}
+
+Return ONLY valid JSON that matches this schema exactly."""
+                else:
+                    enhanced_instruction = f"""{instruction}
+
+IMPORTANT: Return your response as valid JSON format. Do not include any explanatory text or markdown formatting. Return only a JSON object."""
+                
+                logger.info(f"Enhanced instruction: {enhanced_instruction[:200]}...")
+                
+                # Create LLM extraction strategy with enhanced instruction
                 llm_strategy = LLMExtractionStrategy(
                     llm_config=llm_config,
-                    instruction=instruction,
+                    instruction=enhanced_instruction,
                     schema=schema,
-                    extraction_type="schema" if schema else "block"
+                    extraction_type="schema" if schema else "block",
+                    extra_args={
+                        "temperature": temperature,
+                        "max_tokens": max_tokens,
+                        "timeout": timeout
+                    }
                 )
                 logger.info("LLM extraction strategy created successfully")
                 
@@ -899,22 +922,75 @@ class GenericAsyncCrawler:
                 logger.info(f"LLM extraction completed. Result type: {type(llm_result)}")
                 logger.debug(f"LLM result preview: {str(llm_result)[:200]}...")
                 
+                # Parse the extracted content with improved JSON extraction
+                structured_data = llm_result
+                if isinstance(llm_result, str):
+                    try:
+                        import json
+                        import re
+                        
+                        # Clean the result - remove markdown code blocks and extra text
+                        cleaned_result = llm_result.strip()
+                        
+                        # Try to extract JSON from markdown code blocks
+                        json_match = re.search(r'```(?:json)?\s*({.*?})\s*```', cleaned_result, re.DOTALL)
+                        if json_match:
+                            cleaned_result = json_match.group(1)
+                            logger.info("Extracted JSON from markdown code block")
+                        
+                        # Try to find JSON object in the text
+                        elif '{' in cleaned_result and '}' in cleaned_result:
+                            start_idx = cleaned_result.find('{')
+                            # Find the matching closing brace
+                            brace_count = 0
+                            end_idx = start_idx
+                            for i, char in enumerate(cleaned_result[start_idx:], start_idx):
+                                if char == '{':
+                                    brace_count += 1
+                                elif char == '}':
+                                    brace_count -= 1
+                                    if brace_count == 0:
+                                        end_idx = i + 1
+                                        break
+                            
+                            if end_idx > start_idx:
+                                cleaned_result = cleaned_result[start_idx:end_idx]
+                                logger.info("Extracted JSON object from text")
+                        
+                        # Parse the cleaned JSON
+                        structured_data = json.loads(cleaned_result)
+                        logger.info(f"Successfully parsed LLM result as JSON. Keys: {list(structured_data.keys()) if isinstance(structured_data, dict) else 'Not a dict'}")
+                        
+                    except (json.JSONDecodeError, ValueError) as e:
+                        logger.warning(f"Failed to parse LLM result as JSON: {e}")
+                        logger.warning(f"Raw LLM result: {llm_result[:500]}...")
+                        
+                        # If schema was provided but JSON parsing failed, return an error structure
+                        if schema:
+                            logger.error("Schema-based extraction failed to return valid JSON")
+                            structured_data = {
+                                "error": "LLM failed to return valid JSON",
+                                "raw_response": llm_result[:1000],  # Truncate for safety
+                                "parsing_error": str(e)
+                            }
+                        else:
+                            # For non-schema extraction, keep the raw result
+                            structured_data = llm_result
+                
                 response_time = time.time() - start_time
                 
                 return {
                     "url": url,
                     "success": True,
-                    "data": {
+                    "data": structured_data,  # Return parsed structured data
+                    "metadata": {
                         "title": llm_crawl_result.metadata.get("title", "") if llm_crawl_result.metadata else "",
-                        "content": llm_crawl_result.cleaned_html or "",
+                        "content": llm_crawl_result.cleaned_html,
                         "markdown": llm_crawl_result.markdown or "",
-                        "llm_extraction": llm_result,
-                        "metadata": {
-                            "status_code": llm_crawl_result.status_code,
-                            "provider": provider,
-                            "model": model or self.llm_config.get("model"),
-                            "extraction_strategy": "LLMExtractionStrategy"
-                        }
+                        "status_code": llm_crawl_result.status_code,
+                        "provider": provider,
+                        "model": model or self.llm_config.get("model"),
+                        "extraction_strategy": "LLMExtractionStrategy"
                     },
                     "response_time": response_time,
                     "timestamp": datetime.now().isoformat()

@@ -89,10 +89,17 @@ def setup_adaptive_routes(crypto_crawler: CryptoCrawler):
             HTTPException: 400 for invalid requests, 500 for crawling errors.
         """
         try:
-            logger.info(f"Starting adaptive crawl for URL: {request.url}")
+            # Log incoming request with full details
+            logger.info(f"🔥 [BACKEND] Received adaptive crawl request for URL: {request.url}")
+            logger.info(f"🔥 [BACKEND] Full request data: {request.model_dump()}")
+            logger.info(f"🔥 [BACKEND] Request strategy_type: {request.strategy_type}")
+            logger.info(f"🔥 [BACKEND] Request parameters: min_word_count={request.min_word_count}, max_word_count={request.max_word_count}")
+            logger.info(f"🔥 [BACKEND] Request thresholds: content_quality={request.content_quality_threshold}, similarity={request.similarity_threshold}")
+            logger.info(f"🔥 [BACKEND] Request flags: smart_stopping={request.enable_smart_stopping}, pattern_learning={request.enable_pattern_learning}")
             
             # Validate URL
             if not request.url or not request.url.startswith(('http://', 'https://')):
+                logger.error(f"🔥 [BACKEND] Invalid URL format: {request.url}")
                 raise HTTPException(
                     status_code=400, 
                     detail="Invalid URL format. Must start with http:// or https://"
@@ -110,20 +117,162 @@ def setup_adaptive_routes(crypto_crawler: CryptoCrawler):
                 enable_pattern_learning=request.enable_pattern_learning
             )
             
-            # Perform adaptive crawling
-            crawl_result = await crypto_crawler.crawl_with_adaptive_intelligence(
-                url=request.url,
-                strategy_config=strategy_config
-            )
+            logger.info(f"🔥 [BACKEND] Created strategy config: {strategy_config.model_dump()}")
+            
+            # Check if LLM extraction is requested via extractor_config
+            if request.extractor_config and request.extractor_config.get('llm_config'):
+                logger.info(f"🔥 [BACKEND] LLM extraction requested via extractor_config for {request.url}")
+                
+                # Extract LLM configuration from extractor_config
+                llm_config = request.extractor_config.get('llm_config', {})
+                instruction = request.extractor_config.get('instruction', 'Extract the main content and key information from this webpage.')
+                schema = request.extractor_config.get('schema')
+                
+                logger.info(f"🔥 [BACKEND] LLM config: {llm_config}")
+                logger.info(f"🔥 [BACKEND] Instruction: {instruction}")
+                logger.info(f"🔥 [BACKEND] Schema: {schema}")
+                
+                # Initialize GenericAsyncCrawler for LLM extraction
+                from ...crypto_crawler.crawler import GenericAsyncCrawler
+                llm_crawler = GenericAsyncCrawler()
+                await llm_crawler.initialize()
+                
+                try:
+                    # Perform LLM-based extraction
+                    llm_result = await llm_crawler.test_url_with_llm(
+                        url=request.url,
+                        instruction=instruction,
+                        schema=schema,
+                        provider=llm_config.get('provider', 'openrouter'),
+                        model=llm_config.get('model', 'anthropic/claude-3.5-sonnet'),
+                        api_key=llm_config.get('api_key'),
+                        temperature=llm_config.get('temperature', 0.7),
+                        max_tokens=llm_config.get('max_tokens', 1000),
+                        timeout=llm_config.get('timeout', 30)
+                    )
+                    
+                    logger.info(f"🔥 [BACKEND] LLM extraction result: {llm_result}")
+                    
+                    # Close the LLM crawler
+                    await llm_crawler.close()
+                    
+                    # Convert LLM result to adaptive crawl format
+                    # LLM extracted data is now directly in 'data' field
+                    extracted_data = llm_result.get('data', {})
+                    
+                    # Ensure we have structured data, not raw HTML
+                    if isinstance(extracted_data, dict) and len(extracted_data) > 0:
+                        logger.info(f"🔥 [BACKEND] LLM extraction returned structured data with keys: {list(extracted_data.keys())}")
+                        content_for_response = extracted_data  # Use structured data as content
+                    else:
+                        logger.warning(f"🔥 [BACKEND] LLM extraction did not return structured data. Type: {type(extracted_data)}, Value: {str(extracted_data)[:200]}...")
+                        content_for_response = extracted_data  # Fallback to whatever was returned
+                    
+                    crawl_result = {
+                        'success': llm_result.get('success', False),
+                        'url': request.url,
+                        'content': content_for_response,  # Use structured data as content
+                        'extracted_data': extracted_data,  # Keep structured data in extracted_data field
+                        'metadata': {
+                            'extraction_time': llm_result.get('response_time', 0.0),
+                            'llm_extraction': True,
+                            'extractor_used': f"llm_{llm_config.get('provider', 'openrouter')}_{llm_config.get('model', 'claude')}",
+                            'llm_metadata': llm_result.get('metadata', {}),  # Include LLM metadata
+                            'adaptive_intelligence': {
+                                'patterns_learned': [],
+                                'content_quality_score': 0.9,  # High quality for LLM extraction
+                                'adaptation_applied': True,
+                                'stopping_reason': 'llm_extraction_complete',
+                                'statistical_metrics': {},
+                                'strategy_type': strategy_config.strategy_type,
+                                'learning_enabled': strategy_config.enable_pattern_learning,
+                                'smart_stopping_enabled': strategy_config.enable_smart_stopping
+                            }
+                        },
+                        'extraction_time': llm_result.get('response_time', 0.0),
+                        'error': llm_result.get('error') if not llm_result.get('success') else None
+                    }
+                    
+                except Exception as llm_error:
+                    logger.error(f"🔥 [BACKEND] LLM extraction failed: {llm_error}")
+                    await llm_crawler.close()
+                    
+                    # Fall back to regular adaptive crawling
+                    logger.info(f"🔥 [BACKEND] Falling back to regular adaptive crawling for {request.url}")
+                    crawl_result = await crypto_crawler.crawl_with_adaptive_intelligence(
+                        url=request.url,
+                        strategy_config=strategy_config
+                    )
+                    
+                    # Add error information
+                    if 'metadata' not in crawl_result:
+                        crawl_result['metadata'] = {}
+                    crawl_result['metadata']['llm_extraction_error'] = str(llm_error)
+                    
+            else:
+                # Perform regular adaptive crawling
+                logger.info(f"🔥 [BACKEND] Starting regular crawl_with_adaptive_intelligence for {request.url}")
+                crawl_result = await crypto_crawler.crawl_with_adaptive_intelligence(
+                    url=request.url,
+                    strategy_config=strategy_config
+                )
+            
+            logger.info(f"🔥 [BACKEND] Raw crawl result keys: {list(crawl_result.keys()) if isinstance(crawl_result, dict) else 'Not a dict'}")
+            logger.info(f"🔥 [BACKEND] Raw crawl result type: {type(crawl_result)}")
+            logger.info(f"🔥 [BACKEND] Raw crawl result success: {crawl_result.get('success') if isinstance(crawl_result, dict) else 'N/A'}")
+            logger.info(f"🔥 [BACKEND] Raw crawl result content length: {len(str(crawl_result.get('content', ''))) if isinstance(crawl_result, dict) else 'N/A'}")
+            logger.info(f"🔥 [BACKEND] Raw crawl result metadata: {crawl_result.get('metadata', {}) if isinstance(crawl_result, dict) else 'N/A'}")
+            logger.info(f"🔥 [BACKEND] Full raw crawl result: {crawl_result}")
             
             # Extract adaptive metadata
             adaptive_metadata = crawl_result.get('metadata', {}).get('adaptive_intelligence', {})
+            logger.info(f"🔥 [BACKEND] Extracted adaptive metadata: {adaptive_metadata}")
+            
+            # Prepare structured data for frontend compatibility
+            extracted_data = crawl_result.get('extracted_data', {})
+            content = crawl_result.get('content', '')
+            
+            # Determine if we have structured data from LLM extraction
+            has_structured_data = (
+                extracted_data and 
+                isinstance(extracted_data, dict) and 
+                len(extracted_data) > 0 and
+                not isinstance(extracted_data, str)
+            )
+            
+            # For LLM extraction, prioritize structured data
+            if has_structured_data:
+                content_for_display = extracted_data
+                logger.info(f"🔥 [BACKEND] Using structured extracted data as content: {len(str(extracted_data))} characters")
+            elif isinstance(content, dict) and len(content) > 0:
+                # Content is already structured (from LLM)
+                content_for_display = content
+                extracted_data = content  # Ensure extracted_data is populated
+                logger.info(f"🔥 [BACKEND] Using structured content: {len(str(content))} characters")
+            else:
+                # Fall back to raw content
+                content_for_display = content
+                logger.info(f"🔥 [BACKEND] Using raw content: {len(str(content_for_display))} characters")
+            
+            structured_data = {
+                'content': content_for_display,
+                'url': request.url,
+                'success': crawl_result.get('success', False),
+                'metadata': crawl_result.get('metadata', {}),
+                'adaptive_features': adaptive_metadata,
+                'extraction_time': crawl_result.get('extraction_time', 0.0),
+                'extracted_data': extracted_data,
+                'links': crawl_result.get('links', []),
+                'images': crawl_result.get('images', []),
+                'media': crawl_result.get('media', {})
+            }
             
             # Create response
             response = AdaptiveCrawlResponse(
                 success=crawl_result.get('success', False),
                 url=request.url,
-                content=crawl_result.get('content', ''),
+                content=content_for_display,  # Keep structured data as-is for frontend
+                data=structured_data,  # Structured data for frontend
                 metadata=crawl_result.get('metadata', {}),
                 adaptive_features=adaptive_metadata,
                 extraction_time=crawl_result.get('extraction_time', 0.0),
@@ -131,13 +280,32 @@ def setup_adaptive_routes(crypto_crawler: CryptoCrawler):
                 screenshot=crawl_result.get('screenshot')
             )
             
-            logger.info(f"Adaptive crawl completed for {request.url}: success={response.success}")
+            # Log the complete response being sent
+            logger.info(f"🔥 [BACKEND] Created AdaptiveCrawlResponse:")
+            logger.info(f"🔥 [BACKEND] Response success: {response.success}")
+            logger.info(f"🔥 [BACKEND] Response URL: {response.url}")
+            logger.info(f"🔥 [BACKEND] Response content length: {len(response.content)}")
+            logger.info(f"🔥 [BACKEND] Response content preview: {response.content[:200]}...")
+            logger.info(f"🔥 [BACKEND] Response data keys: {list(response.data.keys()) if response.data else 'None'}")
+            logger.info(f"🔥 [BACKEND] Response data size (JSON): {len(str(response.data)) if response.data else 0} characters")
+            logger.info(f"🔥 [BACKEND] Response metadata: {response.metadata}")
+            logger.info(f"🔥 [BACKEND] Response adaptive_features: {response.adaptive_features}")
+            logger.info(f"🔥 [BACKEND] Response extraction_time: {response.extraction_time}")
+            logger.info(f"🔥 [BACKEND] Response error: {response.error}")
+            logger.info(f"🔥 [BACKEND] Full response model dump: {response.model_dump()}")
+            
+            logger.info(f"🔥 [BACKEND] Adaptive crawl completed for {request.url}: success={response.success}")
             return response
             
-        except HTTPException:
+        except HTTPException as he:
+            logger.error(f"🔥 [BACKEND] HTTP Exception in adaptive crawl for {request.url}: {he.detail}")
             raise
         except Exception as e:
-            logger.error(f"Error in adaptive crawl for {request.url}: {e}")
+            logger.error(f"🔥 [BACKEND] Unexpected error in adaptive crawl for {request.url}: {e}")
+            logger.error(f"🔥 [BACKEND] Exception type: {type(e)}")
+            logger.error(f"🔥 [BACKEND] Exception args: {e.args}")
+            import traceback
+            logger.error(f"🔥 [BACKEND] Full traceback: {traceback.format_exc()}")
             raise HTTPException(status_code=500, detail=f"Crawling failed: {str(e)}")
     
     @router.get("/insights/{domain}", response_model=DomainInsights)

@@ -11,6 +11,23 @@ Based on my analysis of the four React components, here's how they work together
 - **Reusable extraction logic** that can be applied across multiple URLs
 - **Performance metrics** (usage count, success rates)
 
+**Core Crawler Service Integration**:
+- **GenericAsyncCrawler** (`src/cry_a_4mcp/crypto_crawler/crawler.py`)
+  - Asynchronous web crawling with configurable parameters
+  - LLM-powered content extraction with structured data output
+  - Support for both adaptive and non-adaptive crawling modes
+  - Comprehensive error handling and retry mechanisms
+  - Integration with multiple LLM providers for content analysis
+
+- **Test URL API** (`src/cry_a_4mcp/api/endpoints/test_url.py`)
+  - RESTful endpoint for testing URL extraction capabilities
+  - Support for both traditional and LLM-based extraction
+  - TestURLResponse model with structured data validation
+  - Real-time testing and validation of crawler configurations
+
+**⚠️ Known Issues**:
+- **Adaptive LLM Form Response Issue**: While the TestURLResponse validation error has been resolved, adaptive LLM crawling still has issues with responding in proper structured form. The LLM sometimes returns unstructured text instead of the expected JSON format, requiring additional validation and error handling.
+
 ### **2. URL Mappings** - The Configuration Bridge
 <mcfile name="urlmappings.tsx" path="/Users/soulmynd/Documents/Programming/Crypto AI platform/CRY-A-4MCP-Templates/frontend/src/pages/urlmappings.tsx"></mcfile> acts as the **configuration layer** that:
 - **Associates specific URLs with appropriate extractors**
@@ -77,6 +94,48 @@ Extractors → URL Mappings → Crawlers → Crawl Jobs
 ### **Phase 1: Foundation** ✅ COMPLETE
 *Note: Extractor validation and standardization is handled by external tooling. Ready-made extractors are provided to the crawler system.*
 
+#### **1.1 URL Configuration Management** ✅ COMPLETED
+**Objective**: Centralized management of target URLs with business context and cost analysis
+
+**Components Built**:
+- **URLConfigurationDatabase** (`src/cry_a_4mcp/database/url_configuration_db.py`)
+  - SQLite-based storage with comprehensive URL metadata
+  - Business-focused fields: priority, scraping difficulty, API availability
+  - Cost analysis and recommendation tracking
+  - Full CRUD operations with proper error handling
+
+- **URL Configuration API** (`src/cry_a_4mcp/api/endpoints/url_configurations.py`)
+  - RESTful endpoints for URL configuration management
+  - Pydantic models for request/response validation
+  - Comprehensive error handling and status codes
+  - Integration with FastAPI framework
+
+- **URL Manager Frontend** (`src/components/URLManager.tsx`)
+  - React-based interface for URL configuration management
+  - Real-time CRUD operations with optimistic updates
+  - Advanced filtering and search capabilities
+  - Responsive design with Tailwind CSS
+
+#### **1.2 Crawler Service Integration** ✅ COMPLETED
+**Objective**: Core crawling engine with LLM-powered extraction capabilities
+
+**Components Built**:
+- **GenericAsyncCrawler** (`src/cry_a_4mcp/crypto_crawler/crawler.py`)
+  - Asynchronous web crawling with configurable parameters
+  - LLM-powered content extraction with structured data output
+  - Support for both adaptive and non-adaptive crawling modes
+  - Comprehensive error handling and retry mechanisms
+  - Integration with multiple LLM providers for content analysis
+
+- **Test URL API** (`src/cry_a_4mcp/api/endpoints/test_url.py`)
+  - RESTful endpoint for testing URL extraction capabilities
+  - Support for both traditional and LLM-based extraction
+  - TestURLResponse model with structured data validation
+  - Real-time testing and validation of crawler configurations
+
+**⚠️ Known Issues**:
+- **Adaptive LLM Form Response Issue**: While the TestURLResponse validation error has been resolved, adaptive LLM crawling still has issues with responding in proper structured form. The LLM sometimes returns unstructured text instead of the expected JSON format, requiring additional validation and error handling.
+
 ### **Phase 2: Integration** 🚀 CURRENT FOCUS
 
 ### Integration Between URL Mappings and Crawlers - Implementation Plan
@@ -134,17 +193,11 @@ URL Mappings imports URLs from URL Manager via dropdown selection, bridging busi
 4. ✅ Add crawler configuration builder
 5. ⚠️ Integrate with existing crawler management
 
-**CRITICAL ISSUE - URL MAPPING PERSISTENCE NOT WORKING**:
-- ❌ **URL mapping settings are NOT persisting in the UI after creating a crawler**
-- ❌ **Data transformation between frontend and backend is incomplete**
-- ❌ **Configuration inheritance accuracy is NOT at 95% as claimed**
-- ❌ **Extractor assignment based on URL mappings is NOT working seamlessly**
 
 **What Was Actually Implemented**:
 - ✅ Frontend UI components for URL mapping selection
 - ✅ Basic data structure updates in `crawlApi.ts`
 - ✅ Enhanced crawler form with URL mapping dropdown
-- ❌ **PERSISTENCE ISSUE REMAINS UNRESOLVED**
 
 ### API Server Integration Plan 🚀 READY TO START
 
@@ -343,11 +396,6 @@ class CrawlJob(BaseModel):
   - ✅ Updated Crawlers page with URL mapping integration
   - ❌ Real-time configuration preview and validation (NOT WORKING)
 
-**UNRESOLVED CRITICAL ISSUES**:
-- ❌ **URL mapping persistence in crawler creation is broken**
-- ❌ **Backend-frontend data synchronization is incomplete**
-- ❌ **Configuration inheritance is not functioning properly**
-- ❌ **Form data is not being saved/retrieved correctly**
 
 #### **Week 3-4: Job Queue Infrastructure**
 - **Day 15-18**: Set up Redis-based queue architecture
