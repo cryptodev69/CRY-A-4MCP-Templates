@@ -2,9 +2,15 @@
 # Usage: make <target>
 
 .PHONY: help install install-dev install-ci test test-unit test-integration test-e2e
+.PHONY: test-performance test-security test-all test-fast test-slow test-parallel
+.PHONY: test-verbose test-debug test-watch test-smoke test-regression test-critical
+.PHONY: coverage coverage-open coverage-json coverage-xml
 .PHONY: lint format security audit clean build docker-build docker-run docker-stop
+.PHONY: format-check mypy ruff ruff-fix black black-check isort isort-check
+.PHONY: security-scan benchmark profile load-test deps-check deps-update
 .PHONY: setup dev start stop restart logs health check-deps pre-commit-install
-.PHONY: release deploy-staging deploy-prod backup restore
+.PHONY: reports reports-open ci-setup ci-test ci-lint ci-security ci-coverage
+.PHONY: release deploy-staging deploy-prod backup restore clean-all status info
 
 # Default target
 help: ## Show this help message
@@ -26,9 +32,20 @@ install-dev: ## Install development dependencies
 	cd starter-mcp-server && pip install -e ".[dev,test]"
 	pip install pre-commit
 	npm install --prefix frontend
+	python run_tests.py --install-deps
 
 install-ci: ## Install CI dependencies
 	cd starter-mcp-server && pip install -e ".[ci,test]"
+	python run_tests.py --install-deps
+
+deps-check: ## Check for dependency vulnerabilities
+	pip-audit
+	safety check
+
+deps-update: ## Update all dependencies
+	pip install --upgrade pip
+	pip install --upgrade -r requirements.txt || echo "No requirements.txt found"
+	cd starter-mcp-server && pip install --upgrade -e ".[dev,test]"
 
 # Setup targets
 setup: ## Initial project setup
@@ -48,6 +65,217 @@ check-deps: ## Check system dependencies
 
 pre-commit-install: ## Install pre-commit hooks
 	pre-commit install
+
+# Enhanced Testing Commands
+test: ## Run all tests with coverage
+	python run_tests.py --suite all --verbose
+
+test-unit: ## Run unit tests only
+	python run_tests.py --suite unit --verbose
+
+test-integration: ## Run integration tests only
+	python run_tests.py --suite integration --verbose
+
+test-e2e: ## Run end-to-end tests only
+	python run_tests.py --suite e2e --verbose
+
+test-performance: ## Run performance tests only
+	python run_tests.py --suite performance --verbose
+
+test-security: ## Run security tests only
+	python run_tests.py --suite security --verbose
+
+test-all: ## Run all test suites sequentially
+	python run_tests.py --suite all --verbose
+
+test-parallel: ## Run tests in parallel
+	python run_tests.py --suite all --parallel --verbose
+
+test-fast: ## Run only fast tests
+	pytest -m "fast" --verbose
+
+test-slow: ## Run only slow tests
+	pytest -m "slow" --verbose
+
+test-smoke: ## Run smoke tests
+	pytest -m "smoke" --verbose
+
+test-regression: ## Run regression tests
+	pytest -m "regression" --verbose
+
+test-critical: ## Run critical functionality tests
+	pytest -m "critical" --verbose
+
+test-verbose: ## Run tests with maximum verbosity
+	python run_tests.py --suite all --verbose
+
+test-debug: ## Run tests with debugging enabled
+	pytest --pdb --pdbcls=IPython.terminal.debugger:Pdb -s --verbose
+
+test-watch: ## Run tests in watch mode (requires pytest-watch)
+	ptw --runner "python run_tests.py --suite unit"
+
+# Coverage Commands
+coverage: ## Generate coverage report
+	python run_tests.py --suite all
+	coverage report --show-missing
+	coverage html
+	@echo "Coverage report generated in coverage/html/index.html"
+
+coverage-open: coverage ## Open coverage report in browser
+	open coverage/html/index.html
+
+coverage-json: ## Generate JSON coverage report
+	coverage json
+	@echo "JSON coverage report generated in coverage.json"
+
+coverage-xml: ## Generate XML coverage report
+	coverage xml
+	@echo "XML coverage report generated in coverage.xml"
+
+# Enhanced Code Quality Commands
+lint: ## Run all linting checks
+	python run_tests.py --lint
+
+format: ## Format code with black and isort
+	black src tests || echo "No src/tests directories found"
+	isort src tests || echo "No src/tests directories found"
+	ruff check --fix src tests || echo "No src/tests directories found"
+
+format-check: ## Check code formatting without making changes
+	black --check --diff src tests || echo "No src/tests directories found"
+	isort --check-only --diff src tests || echo "No src/tests directories found"
+	ruff check src tests || echo "No src/tests directories found"
+
+mypy: ## Run type checking
+	mypy src --ignore-missing-imports || echo "No src directory found"
+
+ruff: ## Run ruff linter
+	ruff check src tests || echo "No src/tests directories found"
+
+ruff-fix: ## Run ruff with auto-fix
+	ruff check --fix src tests || echo "No src/tests directories found"
+
+black: ## Run black formatter
+	black src tests || echo "No src/tests directories found"
+
+black-check: ## Check black formatting
+	black --check --diff src tests || echo "No src/tests directories found"
+
+isort: ## Run import sorting
+	isort src tests || echo "No src/tests directories found"
+
+isort-check: ## Check import sorting
+	isort --check-only --diff src tests || echo "No src/tests directories found"
+
+# Security Commands
+security: ## Run security vulnerability scans
+	bandit -r src/ || echo "No src directory found"
+	safety check
+	pip-audit
+
+security-scan: security ## Alias for security
+
+# Performance Commands
+benchmark: ## Run performance benchmarks
+	pytest tests/performance/ --benchmark-only --benchmark-sort=mean || echo "No performance tests found"
+
+profile: ## Run performance profiling
+	pytest tests/performance/ --profile --profile-svg || echo "No performance tests found"
+
+load-test: ## Run load tests
+	pytest tests/performance/test_load_testing.py -v || echo "No load tests found"
+
+# Reporting Commands
+reports: ## Generate all test reports
+	python run_tests.py --suite all
+	@echo "Test reports generated in test_reports/"
+	@echo "Coverage reports generated in coverage/"
+
+reports-open: reports ## Open test reports in browser
+	open test_reports/all_tests.html || echo "No test reports found"
+	open coverage/html/index.html || echo "No coverage reports found"
+
+# CI/CD Commands
+ci-setup: ## Setup CI environment
+	pip install --upgrade pip
+	make install-ci
+
+ci-test: ## Run tests in CI environment
+	python run_tests.py --suite all --parallel
+
+ci-lint: ## Run linting in CI environment
+	python run_tests.py --lint
+
+ci-security: ## Run security checks in CI environment
+	bandit -r src/ -f json -o security-report.json || echo "No src directory found"
+	safety check --json --output safety-report.json || echo "Safety check failed"
+	pip-audit --format=json --output=audit-report.json || echo "Pip audit failed"
+
+ci-coverage: ## Generate coverage for CI
+	python run_tests.py --suite all
+	coverage xml
+	coverage json
+
+ci-all: ci-setup ci-lint ci-security ci-test ci-coverage ## Run complete CI pipeline
+
+# Utility Commands
+clean: ## Clean up generated files
+	rm -rf .pytest_cache/
+	rm -rf .coverage
+	rm -rf htmlcov/
+	rm -rf coverage/
+	rm -rf test_reports/
+	rm -rf .mypy_cache/
+	rm -rf .ruff_cache/
+	rm -rf dist/
+	rm -rf build/
+	rm -rf *.egg-info/
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	find . -type f -name "*.pyo" -delete 2>/dev/null || true
+
+clean-all: clean ## Clean everything including dependencies
+	rm -rf venv/
+	rm -rf .venv/
+	rm -rf node_modules/
+
+status: ## Show project status
+	@echo "Project Status:"
+	@echo "=============="
+	@echo "Python version: $$(python --version)"
+	@echo "Pip version: $$(pip --version)"
+	@echo "Test files: $$(find . -name 'test_*.py' -o -name '*_test.py' 2>/dev/null | wc -l)"
+	@echo "Source files: $$(find . -name '*.py' -not -path './.*' -not -path './venv/*' -not -path './.venv/*' 2>/dev/null | wc -l)"
+	@echo "Last test run: $$(ls -la test_reports/ 2>/dev/null | head -2 | tail -1 || echo 'No reports found')"
+
+info: ## Show detailed project information
+	@echo "CRY-A-4MCP Testing Framework Information"
+	@echo "======================================"
+	@echo "Test suites available:"
+	@echo "  - unit: Unit tests"
+	@echo "  - integration: Integration tests"
+	@echo "  - e2e: End-to-end tests"
+	@echo "  - performance: Performance tests"
+	@echo "  - security: Security tests"
+	@echo ""
+	@echo "Test markers available:"
+	@echo "  - fast/slow: Test execution speed"
+	@echo "  - smoke: Smoke tests"
+	@echo "  - regression: Regression tests"
+	@echo "  - critical: Critical functionality"
+	@echo ""
+	@echo "Reports generated in:"
+	@echo "  - test_reports/: Test execution reports"
+	@echo "  - coverage/: Coverage reports"
+	@echo ""
+	@echo "For more information, run: make help"
+
+check: lint test ## Run all checks (lint + test)
+
+quick-check: format-check test-fast ## Quick development check
+
+full-check: clean deps-check lint test security ## Comprehensive check
 	pre-commit install --hook-type commit-msg
 	@echo "✅ Pre-commit hooks installed."
 

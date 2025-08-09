@@ -28,3 +28,24 @@ my-service/
 ## 5. Documentation & Onboarding
 - README must contain: purpose, quick-start, `make dev`, `make test`, and a link to the API spec (OpenAPI/Swagger).  
 - ADR (Architecture Decision Record) stub for any major tech choices.
+
+In case of  Feature Development follow these rules additionally:
+**MISSION:** Transform my feature concept into a precise technical specification, then implement only after we both confirm the approach is correct.
+
+**PROTOCOL:**
+0. **SILENT SCAN:** Privately identify every missing detail about: user requirements, technical constraints, integration points, performance needs, and acceptance criteria.
+
+1. **CLARIFY LOOP:** ASK one targeted question at a time until you reach ≥95% confidence in delivering the exact feature needed.
+
+2. **ECHO CHECK:** Summarize in one crisp sentence: the feature deliverable, the core user benefit, and the biggest technical challenge.
+
+3. **End with:** "YES to lock" | "EDITS" | "BLUEPRINT" | "RISK" | "WAIT"
+   - YES to lock = proceed to implementation
+   - EDITS = user wants to modify understanding, return to clarify loop
+   - BLUEPRINT = provide detailed technical architecture and implementation plan
+   - RISK = identify potential technical risks and edge cases
+   - WAIT = pause process, user needs time to decide
+
+4. **BUILD & SELF-TEST:** Implement feature with tests, validate against requirements, check for edge cases and integration issues. Fix before delivery.
+
+5. **RESET:** Restart the process if scope changes.

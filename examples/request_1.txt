@@ -1,0 +1,312 @@
+{
+  "url": "https://www.coingecko.com/",
+  "llm_config": {
+    "provider": "openai",
+    "model": "gpt-3.5-turbo",
+    "api_key": "sk-uvwxijklmnop1234uvwxijklmnop1234uvwxijkl",
+    "temperature": 0.7,
+    "max_tokens": 1000,
+    "timeout": 30
+  },
+  "instruction": "Specialized extraction strategy for NewsLLMExtractionStrategy content.\n    \n    Specialized extraction strategy for NewsLLMExtractionStrategy content.\n    \n    Extraction strategy for news content",
+  "strategy_type": "embedding",
+  "min_word_count": 100,
+  "max_word_count": 10000,
+  "content_quality_threshold": 0.7,
+  "similarity_threshold": 0.8,
+  "learning_rate": 0.1,
+  "enable_smart_stopping": true,
+  "enable_pattern_learning": true,
+  "extractor_id": "NewsLLMExtractionStrategy",
+  "extractor_config": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "headline": {
+          "type": "string",
+          "description": "The main headline or title of the news Article"
+        },
+        "summary": {
+          "type": "string",
+          "description": "A concise summary of the news article (2-3 sentences)"
+        },
+        "key_points": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of key points or takeaways from the article"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string"
+              },
+              "organization": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "description": "Sources cited in the article"
+        },
+        "quotes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "context": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "text"
+            ]
+          },
+          "description": "Notable quotes from the article"
+        },
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "relevance": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "name",
+              "type"
+            ]
+          },
+          "description": "Entities mentioned in the article (people, organizations, locations, etc.)"
+        },
+        "sentiment": {
+          "type": "string",
+          "enum": [
+            "positive",
+            "negative",
+            "neutral",
+            "mixed"
+          ],
+          "description": "Overall sentiment of the article"
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Main topics covered in the article"
+        },
+        "publication_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Publication date of the article if mentioned"
+        },
+        "factual_claims": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Factual claims made in the article"
+        },
+        "bias_assessment": {
+          "type": "string",
+          "enum": [
+            "left",
+            "center-left",
+            "center",
+            "center-right",
+            "right",
+            "unbiased",
+            "unknown"
+          ],
+          "description": "Assessment of potential bias in the article"
+        },
+        "urgency_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Urgency level of the news (1-10)"
+        }
+      },
+      "required": [
+        "headline",
+        "summary",
+        "key_points",
+        "sentiment"
+      ]
+    },
+    "instruction": "Specialized extraction strategy for NewsLLMExtractionStrategy content.\n    \n    Specialized extraction strategy for NewsLLMExtractionStrategy content.\n    \n    Extraction strategy for news content",
+    "llm_config": {
+      "provider": "openai",
+      "model": "gpt-3.5-turbo",
+      "api_key": "sk-uvwxijklmnop1234uvwxijklmnop1234uvwxijkl",
+      "temperature": 0.7,
+      "max_tokens": 1000,
+      "timeout": 30
+    }
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "headline": {
+        "type": "string",
+        "description": "The main headline or title of the news Article"
+      },
+      "summary": {
+        "type": "string",
+        "description": "A concise summary of the news article (2-3 sentences)"
+      },
+      "key_points": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of key points or takeaways from the article"
+      },
+      "sources": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "organization": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name"
+          ]
+        },
+        "description": "Sources cited in the article"
+      },
+      "quotes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            },
+            "context": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "description": "Notable quotes from the article"
+      },
+      "entities": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "relevance": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "name",
+            "type"
+          ]
+        },
+        "description": "Entities mentioned in the article (people, organizations, locations, etc.)"
+      },
+      "sentiment": {
+        "type": "string",
+        "enum": [
+          "positive",
+          "negative",
+          "neutral",
+          "mixed"
+        ],
+        "description": "Overall sentiment of the article"
+      },
+      "topics": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Main topics covered in the article"
+      },
+      "publication_date": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Publication date of the article if mentioned"
+      },
+      "factual_claims": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Factual claims made in the article"
+      },
+      "bias_assessment": {
+        "type": "string",
+        "enum": [
+          "left",
+          "center-left",
+          "center",
+          "center-right",
+          "right",
+          "unbiased",
+          "unknown"
+        ],
+        "description": "Assessment of potential bias in the article"
+      },
+      "urgency_level": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 10,
+        "description": "Urgency level of the news (1-10)"
+      }
+    },
+    "required": [
+      "headline",
+      "summary",
+      "key_points",
+      "sentiment"
+    ]
+  }
+}

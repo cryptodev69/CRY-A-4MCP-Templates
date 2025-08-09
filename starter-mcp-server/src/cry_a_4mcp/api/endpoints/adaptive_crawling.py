@@ -27,6 +27,7 @@ Version: 1.0.0
 # Standard library imports
 from typing import Dict, Optional, Any
 import logging
+import json
 
 # FastAPI framework imports
 from fastapi import APIRouter, HTTPException, Query, Body
@@ -242,17 +243,17 @@ def setup_adaptive_routes(crypto_crawler: CryptoCrawler):
             
             # For LLM extraction, prioritize structured data
             if has_structured_data:
-                content_for_display = extracted_data
-                logger.info(f"🔥 [BACKEND] Using structured extracted data as content: {len(str(extracted_data))} characters")
+                    content_for_display = json.dumps(extracted_data, indent=2) if isinstance(extracted_data, dict) else str(extracted_data)
             elif isinstance(content, dict) and len(content) > 0:
                 # Content is already structured (from LLM)
-                content_for_display = content
+                content_for_display = json.dumps(content, indent=2)
                 extracted_data = content  # Ensure extracted_data is populated
                 logger.info(f"🔥 [BACKEND] Using structured content: {len(str(content))} characters")
             else:
                 # Fall back to raw content
-                content_for_display = content
-                logger.info(f"🔥 [BACKEND] Using raw content: {len(str(content_for_display))} characters")
+                content=str(content_for_display)
+
+                
             
             structured_data = {
                 'content': content_for_display,
@@ -273,7 +274,7 @@ def setup_adaptive_routes(crypto_crawler: CryptoCrawler):
                 url=request.url,
                 content=content_for_display,  # Keep structured data as-is for frontend
                 data=structured_data,  # Structured data for frontend
-                metadata=crawl_result.get('metadata', {}),
+                metadata={ **crawl_result.get('metadata', {}),"extraction_status": "failed" if  structured_data.get("error")=="true" else "success",  "extraction_warning": "Extractor not used due to LLM issues" },
                 adaptive_features=adaptive_metadata,
                 extraction_time=crawl_result.get('extraction_time', 0.0),
                 error=crawl_result.get('error') if not crawl_result.get('success') else None,

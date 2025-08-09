@@ -1,0 +1,151 @@
+/api/adaptive/crawl: {
+  "url": "https://www.coingecko.com/",
+  "llm_config": {
+    "provider": "openai",
+    "model": "gpt-3.5-turbo",
+    "api_key": "sk-uvwxijklmnop1234uvwxijklmnop1234uvwxijkl",
+    "temperature": 0.7,
+    "max_tokens": 1000,
+    "timeout": 30
+  },
+  "instruction": "Specialized extraction strategy for CryptoLLMExtractionStrategy content.\n    \n        \n       Specialized extraction strategy for cryptocurrency content.\n    \n    This strategy extends the base LLMExtractionStrategy with a specialized schema\n    and instruction for extracting information from cryptocurrency news articles.",
+  "strategy_type": "statistical",
+  "min_word_count": 100,
+  "max_word_count": 10000,
+  "content_quality_threshold": 0.7,
+  "similarity_threshold": 0.8,
+  "learning_rate": 0.1,
+  "enable_smart_stopping": true,
+  "enable_pattern_learning": true,
+  "extractor_id": "CryptoLLMExtractionStrategy",
+  "extractor_config": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "headline": {
+          "type": "string",
+          "description": "The main Headline or title of the Article"
+        },
+        "summary": {
+          "type": "string",
+          "description": "A concise summary of the article's main points"
+        },
+        "sentiment": {
+          "type": "string",
+          "enum": [
+            "very_negative",
+            "negative",
+            "neutral",
+            "positive",
+            "very_positive"
+          ],
+          "description": "The overall sentiment of the article towards cryptocurrency"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "market_analysis",
+            "regulation",
+            "technology",
+            "adoption",
+            "security",
+            "investment",
+            "defi",
+            "nft",
+            "mining",
+            "other"
+          ],
+          "description": "The primary category of the article"
+        },
+        "market_impact": {
+          "type": "string",
+          "description": "Analysis of potential market impact based on the article content"
+        },
+        "key_entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Name of the entity (cryptocurrency, company, person, etc.)"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "cryptocurrency",
+                  "token",
+                  "company",
+                  "person",
+                  "organization",
+                  "project",
+                  "exchange",
+                  "other"
+                ],
+                "description": "Type of entity"
+              },
+              "relevance": {
+                "type": "string",
+                "enum": [
+                  "primary",
+                  "secondary",
+                  "mentioned"
+                ],
+                "description": "Relevance of the entity to the article"
+              }
+            },
+            "required": [
+              "name",
+              "type"
+            ]
+          },
+          "description": "Key entities mentioned in the article"
+        },
+        "persona_relevance": {
+          "type": "object",
+          "properties": {
+            "meme_snipers": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10,
+              "description": "Relevance score for traders focused on meme coins and short-term gains (0-10)"
+            },
+            "gem_hunters": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10,
+              "description": "Relevance score for investors looking for undervalued projects with potential (0-10)"
+            },
+            "legacy_investors": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10,
+              "description": "Relevance score for traditional investors focused on established cryptocurrencies (0-10)"
+            }
+          },
+          "description": "Relevance scores for different investor personas"
+        },
+        "urgency_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "How urgent or time-sensitive the information is (0-10)"
+        }
+      },
+      "required": [
+        "headline",
+        "summary",
+        "sentiment"
+      ]
+    },
+    "instruction": "Specialized extraction strategy for CryptoLLMExtractionStrategy content.\n    \n        \n       Specialized extraction strategy for cryptocurrency content.\n    \n    This strategy extends the base LLMExtractionStrategy with a specialized schema\n    and instruction for extracting information from cryptocurrency news articles.",
+    "llm_config": {
+      "provider": "openai",
+      "model": "gpt-3.5-turbo",
+      "api_key": "sk-uvwxijklmnop1234uvwxijklmnop1234uvwxijkl",
+      "temperature": 0.7,
+      "max_tokens": 1000,
+      "timeout": 30
+    }
+  }
+}
